@@ -1,0 +1,20 @@
+{
+    "data": {
+        "allocated": true,
+        "page_id": 0,
+        "slot_num": 1,
+        "size": 8,
+        "values": [
+            {
+                "value": 1911,
+                "size": 4,
+                "type": "integer"
+            },
+            {
+                "value": 2024,
+                "size": 4,
+                "type": "integer"
+            }
+        ]
+    }
+}

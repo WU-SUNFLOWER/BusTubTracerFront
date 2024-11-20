@@ -1,0 +1,10 @@
+{
+    "data": {
+        "page_id": 0,
+        "pre_page_id": 0,
+        "next_page_id": 1,
+        "tuple_count": 8,
+        "size_of_free_space": 24,
+        "size_of_tuple_array": 64
+    }
+}

@@ -1,0 +1,36 @@
+{
+    "data": {
+        "table_id": 1,
+        "table_name": "student",
+        "column_names": [
+            "id",
+            "name",
+            "sex",
+            "age",
+            "score"
+        ],
+        "tuples": [
+            {
+                "rid": {
+                    "page_id": 1,
+                    "slot_num": 16
+                },
+                "columns": [
+                    1,
+                    "xy",
+                    0,
+                    1,
+                    100
+                ]
+            }
+        ],
+        "indices": [
+            {
+                "index_oid": 1,
+                "index_name": "student_score_index",
+                "key_schema": "(score(INT, 4))",
+                "key_size": 4
+            }
+        ]
+    }
+}

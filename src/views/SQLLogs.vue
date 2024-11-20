@@ -1,6 +1,6 @@
 <template>
     <div>
-
+        SQLLogs
     </div>
 </template>
 

@@ -50,11 +50,6 @@ const handleSearch = () => {
     font-family: Arial, sans-serif;
 }
 
-.title {
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 20px;
-}
 
 .description {
     font-size: 16px;

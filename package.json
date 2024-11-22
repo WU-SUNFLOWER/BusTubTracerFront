@@ -11,7 +11,7 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --fix",
-    "electron:dev": "electron ."
+    "electron": "electron ."
   },
   "dependencies": {
     "@types/axios": "^0.14.4",

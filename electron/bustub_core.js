@@ -77,7 +77,6 @@ const BusTubCore = {
             });
             conn.on("error", (err) => {
                 console.error(`error from BusTubCore: ${err}`);
-                reject(err);
             });
         });
     },

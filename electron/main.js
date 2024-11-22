@@ -19,7 +19,6 @@ const handleIpcRequirement = () => {
     ipcMain.handle('sendMessage', async (event, api, data = {}) => {
         let request = JSON.stringify({ api, data });
         let response = await BusTubCore.sendMessage(request);
-        console.log(response);
         return JSON.parse(response);
     });
 };

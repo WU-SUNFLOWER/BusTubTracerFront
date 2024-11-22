@@ -11,12 +11,13 @@
       http-equiv="X-Content-Security-Policy"
       content="default-src 'self'; script-src 'self'"
     />
+    <link rel="stylesheet" type="text/css" href="index.css">
     <title>Hello from Electron renderer!</title>
   </head>
   <body>
     <input type="text" id="text_input">
     <button id="submit_button">Submit</button>
-    <p>response: <a id="response"></a></p>
+    <div>response: <br><a id="response"></a></div>
     <script src="render.js"></script>
   </body>
 </html>

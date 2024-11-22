@@ -5,7 +5,7 @@ import { spawn } from 'child_process';
 
 const BusTubCore = {
     
-    ELF_PATH: path.join(process.cwd(), "test_server/server"),
+    ELF_PATH: path.join(process.cwd(), "server/socket_server"),
 
     SOCKET_PATH: "/tmp/bustub_core_socket",
 
@@ -48,22 +48,24 @@ const BusTubCore = {
         console.log("sucessfully started BusTubCore.");
         this.connection = await this.initConnection();
         console.log("successfully established connection with BusTubCore.");
+
     },
 
     initProcess() {
         return new Promise((resolve, reject) => {
-            const process = spawn(this.ELF_PATH);
-            process.stdout.on("data", (data) => {
+            const bustubProcess = spawn(this.ELF_PATH);
+            bustubProcess.stdout.on("data", (data) => {
                 console.log(`BusTubCore output: ${data}`);
             });
-            process.stderr.on("data", (data) => {
+            bustubProcess.stderr.on("data", (data) => {
                 console.error(`BusTubCore error: ${data}`);
             });
-            process.on("close", (code) => {
+            bustubProcess.on("close", (code) => {
                 console.log(`BusTubCore error: ${code}`);
             });
-            process.on("spawn", () => {
-                resolve(process);
+            process.on("SIGUSR1", function handler() {
+                process.removeListener("SIGUSR1", handler);
+                resolve(bustubProcess);
             });
         });
     },

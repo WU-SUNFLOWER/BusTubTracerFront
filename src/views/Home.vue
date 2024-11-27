@@ -28,12 +28,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { getCurSearchCommand, setSearchHistory, getSearchHistory, setCurSearchCommand } from '@/utils/localStorage';
+
 const searchInput = ref('');
 
+onMounted(() => {
+    searchInput.value = getCurSearchCommand();
+});
+
 const handleSearch = () => {
-    console.log('Searching for:', searchInput.value);
+    saveSearchToLocalStorage(searchInput.value);
+    setCurSearchCommand(searchInput.value);
 };
+const saveSearchToLocalStorage = (searchValue: string) => {
+    const currentTime = new Date();
+    const formattedTime = `${currentTime.getFullYear()}/${padZero(currentTime.getMonth() + 1)}/${padZero(currentTime.getDate())} ${padZero(currentTime.getHours())}:${padZero(currentTime.getMinutes())}`;
+    const searchData = { time: formattedTime, value: searchValue };
+
+    let searchHistory = getSearchHistory() || [];
+    searchHistory.push(searchData);
+    setSearchHistory(searchHistory);
+};
+function padZero(number: number): string {
+    return number.toString().padStart(2, '0');
+}
 </script>
 
 <style scoped>

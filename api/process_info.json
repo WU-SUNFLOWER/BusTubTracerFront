@@ -87,123 +87,114 @@
                     }
                 ]
             },
-            "executor_tree": {
-                "executor_node_tag": "Projection Executor",
-                "bound_planner_node_id": 0,
-                "output_table": [
-                    [
-                        "student.name"
-                    ],
-                    [
-                        "张三"
-                    ],
-                    [
-                        "李四"
-                    ]
-                ],
-                "children": [
-                    {
-                        "executor_node_tag": "Filter Executor",
-                        "bound_planner_node_id": 1,
-                        "output_table": [
-                            [
-                                "student.id",
-                                "student.name",
-                                "courses_selected_record.sid",
-                                "courses_selected_record.cid"
-                            ],
-                            [
-                                "202401",
-                                "张三",
-                                "202401",
-                                1
-                            ],
-                            [
-                                "202401",
-                                "李四",
-                                "202401",
-                                2
-                            ]
+            "executor_tree": [
+                {
+                    "bound_planner_node_id": 0,
+                    "output_table": [
+                        [
+                            "student.name"
                         ],
-                        "children": [
-                            {
-                                "executor_node_tag": "NestedLoopJoin Executor",
-                                "bound_planner_node_id": 2,
-                                "output_table": [
-                                    [
-                                        "student.id",
-                                        "student.name",
-                                        "courses_selected_record.sid",
-                                        "courses_selected_record.cid"
-                                    ],
-                                    [
-                                        "202401",
-                                        "张三",
-                                        "202401",
-                                        1
-                                    ],
-                                    [
-                                        "202401",
-                                        "张三",
-                                        "202402",
-                                        2
-                                    ],
-                                    [
-                                        "202402",
-                                        "李四",
-                                        "202401",
-                                        1
-                                    ],
-                                    [
-                                        "202402",
-                                        "李四",
-                                        "202402",
-                                        2
-                                    ]
-                                ],
-                                "children": [
-                                    {
-                                        "bound_planner_node_id": 3,
-                                        "executor_node_tag": "SeqScan Executor",
-                                        "output_table": [
-                                            [
-                                                "student.id",
-                                                "student.name"
-                                            ],
-                                            [
-                                                "202401",
-                                                "张三"
-                                            ],
-                                            [
-                                                "202402",
-                                                "李四"
-                                            ]
-                                        ]
-                                    },
-                                    {
-                                        "bound_planner_node_id": "SeqScan Executor",
-                                        "executor_node_tag ": 4,
-                                        "output_table": [
-                                            [
-                                                "courses_selected_record.sid",
-                                                "courses_selected_record.cid"
-                                            ],
-                                            [
-                                                "202401",
-                                                1
-                                            ],
-                                            [
-                                                "202402",
-                                                2
-                                            ]
-                                        ]
-                                    }
-                                ]
-                            }
+                        [
+                            "张三"
+                        ],
+                        [
+                            "李四"
                         ]
-                    }
-                ]
-            }
+                    ]
+                },
+                {
+                    "bound_planner_node_id": 1,
+                    "output_table": [
+                        [
+                            "student.id",
+                            "student.name",
+                            "courses_selected_record.sid",
+                            "courses_selected_record.cid"
+                        ],
+                        [
+                            "202401",
+                            "张三",
+                            "202401",
+                            1
+                        ],
+                        [
+                            "202401",
+                            "李四",
+                            "202401",
+                            2
+                        ]
+                    ]
+                },
+                {
+                    "bound_planner_node_id": 2,
+                    "output_table": [
+                        [
+                            "student.id",
+                            "student.name",
+                            "courses_selected_record.sid",
+                            "courses_selected_record.cid"
+                        ],
+                        [
+                            "202401",
+                            "张三",
+                            "202401",
+                            1
+                        ],
+                        [
+                            "202401",
+                            "张三",
+                            "202402",
+                            2
+                        ],
+                        [
+                            "202402",
+                            "李四",
+                            "202401",
+                            1
+                        ],
+                        [
+                            "202402",
+                            "李四",
+                            "202402",
+                            2
+                        ]
+                    ]
+                },
+                {
+                    "bound_planner_node_id": 3,
+                    "output_table": [
+                        [
+                            "student.id",
+                            "student.name"
+                        ],
+                        [
+                            "202401",
+                            "张三"
+                        ],
+                        [
+                            "202402",
+                            "李四"
+                        ]
+                    ]
+                },
+                {
+                    "executor_node_tag ": 4,
+                    "output_table": [
+                        [
+                            "courses_selected_record.sid",
+                            "courses_selected_record.cid"
+                        ],
+                        [
+                            "202401",
+                            1
+                        ],
+                        [
+                            "202402",
+                            2
+                        ]
+                    ]
+                }
+            ]
         }
     }
 }

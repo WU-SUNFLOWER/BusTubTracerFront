@@ -1,0 +1,22 @@
+{
+    "data": {
+        "tables": [
+            {
+                "table_oid": 5,
+                "table_name": "test_3"
+            },
+            {
+                "table_oid": 4,
+                "table_name": "test_2"
+            },
+            {
+                "table_oid": 8,
+                "table_name": "my_table"
+            },
+            {
+                "table_oid": 7,
+                "table_name": "empty_table3"
+            }
+        ]
+    }
+}

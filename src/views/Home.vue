@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getCurSearchCommand, setSearchHistory, getSearchHistory, setCurSearchCommand } from '@/utils/localStorage';
+import { ElMessage } from 'element-plus';
 
 const searchInput = ref('');
 
@@ -38,6 +39,17 @@ onMounted(() => {
 });
 
 const handleSearch = () => {
+    if (searchInput.value === '') {
+        ElMessage({
+            message: 'Search input cannot be empty',
+            type: 'warning',
+        });
+        return;
+    }
+    ElMessage({
+        message: 'Searching...',
+        type: 'success',
+    });
     saveSearchToLocalStorage(searchInput.value);
     setCurSearchCommand(searchInput.value);
 };

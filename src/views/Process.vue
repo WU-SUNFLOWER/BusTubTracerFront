@@ -32,18 +32,20 @@
             <div class="right_executor" v-if="selectedBtnIndex == 2">
                 <div style="padding:5px;padding-left: 20px; font-size: 18px;">plan attributions</div>
                 <div style="padding:5px;padding-left: 20px;font-size: 14px;font-weight: bold;">expression</div>
-                <div v-if="curNodeInfo.value.input_table">
-                    <div style="padding:5px;padding-left: 20px; font-size: 18px;">input table</div>
-                    <el-table :data="curNodeInfo.value.input_table.slice(1)" style="width: 100%">
-                        <el-table-column v-for="(column, index) in curNodeInfo.value.input_table[0]" :key="index"
-                            :prop="`column${index}`" :label="column"></el-table-column>
+                <textarea v-model="expressionText" class="expression-text" readonly></textarea>
+                <div v-if="curNodeInfo && curNodeInfo.input_table">
+                    <div style="padding:5px;padding-left: 20px; font-size: 18px;">input tables</div>
+                    <el-table :data="curInputTable.data" style="width: 100%">
+                        <el-table-column v-for="header in curInputTable.headers" :key="header" :prop="header"
+                            :label="header"></el-table-column>
                     </el-table>
+
                 </div>
-                <div v-if="curNodeInfo.value.output_table">
+                <div v-if="curNodeInfo && curNodeInfo.output_table">
                     <div style="padding:5px;padding-left: 20px; font-size: 18px;">output tables</div>
-                    <el-table :data="curNodeInfo.value.output_table.slice(1)" style="width: 100%">
-                        <el-table-column v-for="(column, index) in curNodeInfo.value.output_table[0]" :key="index"
-                            :prop="`column${index}`" :label="column"></el-table-column>
+                    <el-table :data="curOutputTable.data" style="width: 100%">
+                        <el-table-column v-for="header in curOutputTable.headers" :key="header" :prop="header"
+                            :label="header"></el-table-column>
                     </el-table>
                 </div>
             </div>
@@ -70,10 +72,17 @@ const searchCommand = getCurSearchCommand();
 
 const planner_tree = processInfo.data.process_info.planner_tree;
 const optimized_planner_tree = processInfo.data.process_info.optimized_planner_tree;
-const executor_tree = processInfo.data.process_info.executor_tree;
+let executor_tree: any;
+executor_tree = processInfo.data.process_info.executor_tree;
 let curNodeInfo = ref()
-let curNodeTag = ref('None')
+let curNodeTag = ref('Unselected Node')
+let curOutputTable: any;
+let curInputTable: any;
 function updateNowNode(nowNode: number) {
+    if (!executor_tree[nowNode]) {
+        return;
+    }
+
     curNodeInfo.value = getCurNodeInfo(nowNode)
     let tag = curNodeInfo.value?.planner_node_tag
     let prefix = '';
@@ -116,6 +125,14 @@ function getCurNodeInfo(nodeId: number) {
 
         const boundPlannerNodeId = originalResult.bound_planner_node_id || 0;
         const boundPlannerNodeTag = findTreeNodeById(optimized_planner_tree, boundPlannerNodeId)?.planner_node_tag;
+        if (originalResult.output_table) {
+            curOutputTable = convertToElTableData(originalResult.output_table)
+        }
+
+        if (originalResult.input_table) {
+            curInputTable = convertToElTableData(originalResult.input_table)
+        }
+
         return {
             ...originalResult,
             planner_node_tag: boundPlannerNodeTag
@@ -138,9 +155,41 @@ function findTreeNodeById(tree: any, nodeId: number): any | null {
     return null;
 }
 
+
+function convertToElTableData(table: any[][]) {
+    if (!table || table.length === 0) {
+        return [];
+    }
+
+    const headers = table[0];
+    const data = table.slice(1).map(row => {
+        const obj: any = {};
+        headers.forEach((header, index) => {
+            obj[header] = row[index];
+        });
+        return obj;
+    });
+
+    return {
+        headers,
+        data
+    }
+}
+
+const expressionText = ref('');
+
 </script>
 
 <style scoped>
+.expression-text {
+
+    min-width: 90%;
+    min-height: 20px;
+    margin-left: 20px;
+    max-height: 20%;
+    font-size: large;
+}
+
 .right {
     height: 100%;
 }

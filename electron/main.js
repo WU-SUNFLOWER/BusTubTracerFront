@@ -12,7 +12,7 @@ const createWindow = () => {
         },
     });
     mainWindow.loadFile(path.join(process.cwd(), 'test_front/index.html'));
-    //mainWindow.loadURL("http://localhost:5173/");
+    // mainWindow.loadURL("http://localhost:5173/");
 };
 
 const handleIpcRequirement = () => {

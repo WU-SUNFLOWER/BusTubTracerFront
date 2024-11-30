@@ -20,42 +20,71 @@ const props = defineProps({
 
 const planner_tree = props.executorTree;
 function treeToGraphData(tree: any) {
-    const data = { nodes: [] as any[], edges: [] as any[], plannerNodeId: -1 };
+    const data = { 
+        nodes: [] as any[], 
+        edges: [] as any[], 
+        plannerNodeId: -1 
+    };
     const nodeIdMap = new Map();
-    let maxPlannerNodeId = -1;
+    let maxNodeId = -1;
 
     function traverseTree(node: { planner_node_id: any; planner_node_tag: any; children: any; }, parentId = null) {
         const nodeId = node.planner_node_id;
         const nodeIndex = data.nodes.length;
-        data.nodes.push({ id: nodeId, label: node.planner_node_tag, shape: 'rect' });
+        data.nodes.push({ 
+            id: nodeId, 
+            label: `${node.planner_node_tag}(${nodeId})`, 
+            shape: 'ellipse' 
+        });
         nodeIdMap.set(nodeId, nodeIndex);
         if (parentId !== null) {
             const parentIndex = nodeIdMap.get(parentId);
-            data.edges.push({ source: nodeIndex, target: parentIndex, label: '' });
+            data.edges.push({ 
+                source: nodeIndex, 
+                target: parentIndex, 
+                label: '' 
+            });
         }
-        maxPlannerNodeId = Math.max(maxPlannerNodeId, nodeId);
-        (node.children || []).forEach((child: { planner_node_id: any; planner_node_tag: any; children: any; }) => traverseTree(child, nodeId));
+        maxNodeId = Math.max(maxNodeId, nodeId);
+        if (node.children) {
+            node.children.forEach((child: { planner_node_id: any; planner_node_tag: any; children: any; }) => {
+                traverseTree(child, nodeId);
+            });
+        }
     }
 
     function traverseTable(node: {
         planner_node_attr: {
-            [x: string]:
-            /// <reference types="../../node_modules/.vue-global-types/vue_3.5_false.d.ts" />
-            any; table: any;
-        }; planner_node_id: any; children: any;
-    }) {
-        if (node.planner_node_attr && node.planner_node_attr.table_name) {
-            maxPlannerNodeId = maxPlannerNodeId + 1;
-            const newNodeId = maxPlannerNodeId;
-            data.nodes.push({ id: newNodeId, label: node.planner_node_attr.table_name, shape: 'rect' });
-            data.edges.push({ source: newNodeId, target: node.planner_node_id, label: '' });
+            [x: string]: any; 
+            table: any;
+        }; 
+        planner_node_id: any; 
+        children: any;
+    }) 
+    {
+        if (node?.planner_node_attr?.table) {
+            const newNodeIndex = data.nodes.length;
+            data.nodes.push({ 
+                id: ++maxNodeId,
+                label: node.planner_node_attr.table, 
+                shape: 'rect' 
+            });
+            data.edges.push({ 
+                source: newNodeIndex, 
+                target: nodeIdMap.get(node.planner_node_id), 
+                label: '' 
+            });
         }
 
-        (node.children || []).forEach((child: { planner_node_attr: { table: any; }; planner_node_id: any; children: any; }) => traverseTable(child));
+        if (node.children) {
+            node.children.forEach((child: { planner_node_attr: { table: any; }; planner_node_id: any; children: any; }) => {
+                traverseTable(child);
+            });
+        }
     }
 
     traverseTree(tree);
-    data.plannerNodeId = maxPlannerNodeId;
+    data.plannerNodeId = maxNodeId;
     traverseTable(tree);
 
     return data;
@@ -63,13 +92,18 @@ function treeToGraphData(tree: any) {
 
 const data = treeToGraphData(planner_tree);
 let container: any;
-let nowNode = -1;
+let nowNodeId = -1;
 const emit = defineEmits(['getNowNode']);
 
-function getNodeStyle(item: any, isPlannerNode: boolean) {
+function getNodeStyle(item: any) {
+    const isPlannerNode = item.id <= data.plannerNodeId;
     let baseStyle = `fill:${isPlannerNode ? 'rgb(184,134,248)' : 'rgb(162,239,77)'};stroke:none;cursor:pointer`;
     let labelStyle = `fill:rgb(0,0,0);font-weight:bold;cursor:pointer`;
-    if (nowNode == item.id && isPlannerNode) {
+    if (!isPlannerNode) {
+        baseStyle += ";pointer-events:none;";
+        labelStyle += ";pointer-events:none;";
+    }
+    if (nowNodeId == item.id && isPlannerNode) {
         baseStyle = `fill:rgb(184,134,248);stroke:purple;stroke-width:3px;stroke-dasharray:5,5;cursor:pointer`;
     }
     return {
@@ -77,6 +111,7 @@ function getNodeStyle(item: any, isPlannerNode: boolean) {
         labelStyle: labelStyle,
     };
 }
+
 function drawTree() {
     // 清除之前的渲染
     d3.select('#mainsvg').selectAll('*').remove();
@@ -84,11 +119,10 @@ function drawTree() {
     graph = new dagreD3.graphlib.Graph();
     graph.setGraph({ rankdir: 'BT' });
 
-    data.nodes.forEach((item: any) => {
-        const isPlannerNode = item.id <= data.plannerNodeId;
-        const { style, labelStyle } = getNodeStyle(item, isPlannerNode);
-        graph.setNode(item.id, {
-            label: item.label + '\nExecutor',
+    data.nodes.forEach((item: any, index: number) => {
+        const { style, labelStyle } = getNodeStyle(item);
+        graph.setNode(index, {
+            label: item.label,
             shape: item.shape,
             style,
             labelStyle,
@@ -107,17 +141,20 @@ function drawTree() {
     container = d3.select('#mainsvg').append('g');
     render(container, graph);
 
+    container.selectAll('g.node').each(function (this: SVGGElement, index: any) {
+        const nodeId = data.nodes[index].id;
+        d3.select(this).attr("data-node-id", nodeId);
+    });
+
     const gBBox = container.node().getBBox();
     d3.select('#mainsvg').attr('viewBox', `0 0 ${gBBox.width} ${gBBox.height}`);
-    //svg大小设置为g的宽高
     d3.select('#mainsvg').attr('width', gBBox.width);
     d3.select('#mainsvg').attr('height', gBBox.height);
-    container.attr('transform', `translate(5, 5)`);
 
     container.selectAll('g.node').on('click', (e: any) => {
-        nowNode = e.target.__data__;
-        emit('getNowNode', nowNode);
+        nowNodeId = Number.parseInt(e.currentTarget.getAttribute("data-node-id"));
         drawTree();
+        requestAnimationFrame(() => emit('getNowNode', nowNodeId));
     });
 }
 

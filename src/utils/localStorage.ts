@@ -8,7 +8,7 @@ export const setSearchHistory = (value: any) => {
 }
 
 export const getSearchHistory = () => {
-    return JSON.parse(localStorage.getItem(searchHistoryKey) || '[]');
+    return JSON.parse(localStorage.getItem(searchHistoryKey) ?? '[]');
 
 }
 
@@ -21,11 +21,11 @@ export const getSearchResult = () => {
 }
 
 export const setCurSearchCommand = (value: string) => {
-    localStorage.setItem(curSearchCommandKey, JSON.stringify(value));
+    localStorage.setItem(curSearchCommandKey, value);
 }
 
 export const getCurSearchCommand = () => {
-    return JSON.parse(localStorage.getItem(curSearchCommandKey) || '');
+    return localStorage.getItem(curSearchCommandKey) ?? '';
 }
 
 export const setCurProcessInfo = (value: any) => {

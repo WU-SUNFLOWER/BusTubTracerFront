@@ -17,28 +17,47 @@
             </ul>
         </div>
         <div class="search-box">
-            <el-input v-model="searchInput" @keyup.enter="handleSearch" placeholder="Enter your SQL command here"
-                clearable>
+            <el-input 
+                v-model="searchInput" 
+                @input="handleInputChange" 
+                @keyup.enter="handleSearch" 
+                placeholder="Enter your SQL command here"
+                clearable
+                spellcheck="false"
+            >
                 <template #append>
                     <el-button class="custom-primary-button" @click="handleSearch">Submit</el-button>
                 </template>
             </el-input>
         </div>
+        <div class="sql-result">
+            <h3>SQL execution Result</h3>
+            <div class="sql-result-area"> {{ rawSqlResult }} </div>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getCurSearchCommand, setSearchHistory, getSearchHistory, setCurSearchCommand } from '@/utils/localStorage';
+import { ref, onMounted, toRaw } from 'vue';
+import { 
+    getCurSearchCommand, setSearchHistory, getSearchHistory, 
+    setCurSearchCommand, getSearchResult, setSearchResult,
+} from '@/utils/localStorage';
 import { ElMessage } from 'element-plus';
+import { useLinkStore } from '@/stores/linkStore';
+import { useProcessDataStore } from '@/stores/processDataStore';
+
+const linkStore = useLinkStore();
+const processStore = useProcessDataStore();
 
 const searchInput = ref('');
+const rawSqlResult = ref('');
 
 onMounted(() => {
     searchInput.value = getCurSearchCommand();
 });
 
-const handleSearch = () => {
+const handleSearch = async () => {
     if (searchInput.value === '') {
         ElMessage({
             message: 'Search input cannot be empty',
@@ -46,22 +65,54 @@ const handleSearch = () => {
         });
         return;
     }
+    const result = await window.bustub.sendMessage("/submit_sql_command", {
+        'sql': searchInput.value
+    });
+    saveSearchToLocalStorage(searchInput.value, result);
+    if (result['err_msg']) {
+        ElMessage({
+            message: result['err_msg'],
+            type: 'error'
+        });
+        return;
+    }
     ElMessage({
-        message: 'Searching...',
+        message: 'Success',
         type: 'success',
     });
-    saveSearchToLocalStorage(searchInput.value);
+    const { 
+        raw_result: rawResult, 
+        can_show_process: canShowProcess,
+        process_info: processInfo,
+    } = result['data'];
+    rawSqlResult.value = rawResult;
+    if (canShowProcess) {
+        linkStore.enableLink("Process");
+        processStore.setData(processInfo);
+    }
+};
+
+const handleInputChange = () => {
     setCurSearchCommand(searchInput.value);
 };
-const saveSearchToLocalStorage = (searchValue: string) => {
+
+const saveSearchToLocalStorage = (searchSQL: string, searchResult: any) => {
     const currentTime = new Date();
     const formattedTime = `${currentTime.getFullYear()}/${padZero(currentTime.getMonth() + 1)}/${padZero(currentTime.getDate())} ${padZero(currentTime.getHours())}:${padZero(currentTime.getMinutes())}`;
-    const searchData = { time: formattedTime, value: searchValue };
+    const currentSearchHistory = { 
+        time: formattedTime, 
+        sql: searchSQL,
+    };
 
-    let searchHistory = getSearchHistory() || [];
-    searchHistory.push(searchData);
-    setSearchHistory(searchHistory);
+    let searchHistories = getSearchHistory() ?? [];
+    searchHistories.push(currentSearchHistory);
+    setSearchHistory(searchHistories);
+
+    let searchResults = getSearchResult() ?? [];
+    searchResults.push(searchResult);
+    setSearchResult(searchResults);
 };
+
 function padZero(number: number): string {
     return number.toString().padStart(2, '0');
 }
@@ -99,5 +150,11 @@ function padZero(number: number): string {
 .description li {
     margin-bottom: 5px;
 
+}
+
+.sql-result .sql-result-area {
+    white-space: pre;
+    font-family: monospace;
+    text-align: center;
 }
 </style>

@@ -1,4 +1,5 @@
-import path, { resolve } from 'path';
+import { fileURLToPath } from 'url'
+import path, { resolve, dirname } from 'path';
 import net from 'net';
 import process from 'process';
 import { spawn } from 'child_process';
@@ -39,7 +40,11 @@ const BusTubCore = {
     connection: null,
 
     async init() {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
         
+        //this.ELF_PATH = path.join(__dirname, '../', '../', this.ELF_PATH);
+
         if (this.process != null || this.connection != null) {
             console.log("connection to BusTubCore has already been built!");
         }
@@ -49,6 +54,19 @@ const BusTubCore = {
         this.connection = await this.initConnection();
         console.log("successfully established connection with BusTubCore.");
 
+    },
+
+    exit() {
+        ;
+        this.closeConnection();
+        console.log("The connection to BusTubCore is closed.");
+        
+        if (this.exitProcess()) {
+            console.log("The BusTubCore Process is exited.");
+        } else {
+            console.error("Fail to kill BusTubCore Process.");
+        }
+        
     },
 
     initProcess() {
@@ -70,6 +88,10 @@ const BusTubCore = {
         });
     },
 
+    exitProcess() {
+        return this.process.kill();
+    },
+
     initConnection() {
         return new Promise((resolve, reject) => {
             const conn = net.createConnection({ path: this.SOCKET_PATH }, () => {
@@ -79,6 +101,10 @@ const BusTubCore = {
                 console.error(`error from BusTubCore: ${err}`);
             });
         });
+    },
+
+    closeConnection() {
+        this.connection.destroy();
     },
 
     packDatagram(payload) {
@@ -162,6 +188,17 @@ const BusTubCore = {
         // wait server to respond
         let respond = await self.recvRespond();
         return respond;
+    },
+
+    async executeSQL(sqlCommand) {
+        let msg = {
+            'api': '/submit_sql_command',
+            'data': {
+                'sql': sqlCommand,
+            }
+        };
+        let result = await this.sendMessage(JSON.stringify(msg));
+        return JSON.parse(result);
     },
 
 };

@@ -2,12 +2,14 @@
   <div class="container">
     <div class="header">
       <div class="header-nav">
-        <router-link to="/home" class="nav-item">Home</router-link>
-        <router-link to="/sqllogs" class="nav-item">SQL Logs</router-link>
-        <router-link to="/process" class="nav-item">Process</router-link>
-        <router-link to="/storage" class="nav-item">Storage</router-link>
-        <router-link to="/index" class="nav-item">Index</router-link>
-        <router-link to="/help" class="nav-item">Help</router-link>
+        <router-link
+          v-for="link in linkStore.links"
+          :to="link.to"
+          class="nav-item"
+          :class="{ disabled: !link.enabled }"
+        >
+          {{ link.label }}
+        </router-link>
       </div>
     </div>
     <router-view></router-view>
@@ -16,6 +18,9 @@
 </template>
 
 <script setup lang="ts">
+import { useLinkStore } from '@/stores/linkStore';
+
+const linkStore = useLinkStore();
 
 </script>
 
@@ -49,5 +54,11 @@
 .nav-item.router-link-active {
   background-color: blue;
   color: white;
+  cursor: default;
+}
+
+.nav-item.disabled {
+  color: grey;
+  pointer-events: none;
 }
 </style>

@@ -25,54 +25,34 @@
             <div v-if="hasSelectedNode">
                 <h1 class="right-header">{{ curNodeTag }}</h1>
                 <el-collapse v-model="activeCollapseItems">
-                    <el-collapse-item 
-                        title="Meta Information" 
-                        name="collapse-item-meta"
-                    >
+                    <el-collapse-item title="Meta Information" name="collapse-item-meta">
                         <el-form label-width="auto" style="max-width: 600px" disabled>
-                            <el-form-item
-                                v-for="(value, attr) in curNodeMeta"
-                                :label="attr"
-                            >
-                                <el-input :value="value"/>
+                            <el-form-item v-for="(value, attr) in curNodeMeta" :label="attr">
+                                <el-input :value="value" />
                             </el-form-item>
-                        </el-form>                        
+                        </el-form>
                     </el-collapse-item>
-                    <el-collapse-item 
-                        :title="selectedBtnIndex === 2 ? 'Plan Attributions' : 'Attributions'" 
-                        name="collapse-item-attr"
-                    >
+                    <el-collapse-item :title="selectedBtnIndex === 2 ? 'Plan Attributions' : 'Attributions'"
+                        name="collapse-item-attr">
                         <el-form label-width="auto" style="max-width: 600px" disabled>
-                            <el-form-item
-                                v-for="(value, attr) in curNodeAttrs"
-                                :label="attr"
-                            >
-                                <el-input :value="value"/>
+                            <el-form-item v-for="(value, attr) in curNodeAttrs" :label="attr">
+                                <el-input :value="value" />
                             </el-form-item>
-                        </el-form>                        
+                        </el-form>
                     </el-collapse-item>
-                    <el-collapse-item 
-                        title="Input Tables" 
-                        name="collapse-item-input-table"
-                        v-if="selectedBtnIndex === 2"
-                    >
+                    <el-collapse-item title="Input Tables" name="collapse-item-input-table"
+                        v-if="selectedBtnIndex === 2">
                         <el-collapse>
-                            <el-collapse-item
-                                v-for="(value, key) in curInputTables"
-                                :title="key"
-                            >
-                            <el-table :data="value.data" height="350" border stripe>
-                                <el-table-column v-for="header in value.headers" :key="header" :prop="header"
-                                    :label="header"></el-table-column>
-                            </el-table>
+                            <el-collapse-item v-for="(value, key) in curInputTables" :title="key">
+                                <el-table :data="value.data" height="350" border stripe>
+                                    <el-table-column v-for="header in value.headers" :key="header" :prop="header"
+                                        :label="header"></el-table-column>
+                                </el-table>
                             </el-collapse-item>
                         </el-collapse>
                     </el-collapse-item>
-                    <el-collapse-item 
-                        title="Output Table" 
-                        name="collapse-item-output-table"
-                        v-if="selectedBtnIndex === 2"
-                    >
+                    <el-collapse-item title="Output Table" name="collapse-item-output-table"
+                        v-if="selectedBtnIndex === 2">
                         <el-table :data="curOutputTable.data" height="450" border stripe>
                             <el-table-column v-for="header in curOutputTable.headers" :key="header" :prop="header"
                                 :label="header"></el-table-column>
@@ -90,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { getCurSearchCommand } from '@/utils/localStorage';
 import PlannerTree from '@/components/PlannerTree.vue';
 import ExecutorTree from '@/components/ExecutorTree.vue';
@@ -127,7 +107,7 @@ let curNodeMeta = ref();
 let curOutputTable = ref();
 let curInputTables = ref();
 
-function computeExecutorMap(executorTree: any []) {
+function computeExecutorMap(executorTree: any[]) {
     let map = new Map();
     for (let node of executorTree) {
         map.set(node.bound_planner_node_id, node);
@@ -169,7 +149,7 @@ function updateNowNode(nowNodeId: number) {
             'node id': nowNodeId
         };
     }
-    
+
 }
 
 function getCurNodeInfo(nodeId: number) {
@@ -193,7 +173,7 @@ function getCurNodeInfo(nodeId: number) {
                 let childNodeId = child.planner_node_id;
                 let childNodeTag = child.planner_node_tag;
                 let childExecutor = ExecutorTreeMap.get(childNodeId);
-                curInputTables.value[`From ${childNodeTag}(${childNodeId})`] 
+                curInputTables.value[`From ${childNodeTag}(${childNodeId})`]
                     = convertToElTableData(childExecutor.output_table);
             }
         }

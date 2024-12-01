@@ -16,6 +16,10 @@
             {
                 "table_oid": 7,
                 "table_name": "empty_table3"
+            },
+            {
+                "table_oid": 17,
+                "table_name": "table3"
             }
         ]
     }

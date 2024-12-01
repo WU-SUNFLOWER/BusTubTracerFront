@@ -8,12 +8,12 @@
             {
                 "value": 1911,
                 "size": 4,
-                "type": "integer"
+                "type": "INTEGER"
             },
             {
                 "value": 2024,
                 "size": 4,
-                "type": "integer"
+                "type": "INTEGER"
             }
         ]
     }

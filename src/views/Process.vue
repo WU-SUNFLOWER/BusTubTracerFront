@@ -75,6 +75,7 @@ import { getCurSearchCommand } from '@/utils/localStorage';
 import PlannerTree from '@/components/PlannerTree.vue';
 import ExecutorTree from '@/components/ExecutorTree.vue';
 import { useProcessDataStore } from '@/stores/processDataStore';
+import { rawTableToElTableData } from '@/utils/bustub';
 
 const activeCollapseItems = ref(["collapse-item-meta", 'collapse-item-attr'])
 
@@ -164,7 +165,7 @@ function getCurNodeInfo(nodeId: number) {
         const boundPlannerNode = findTreeNodeById(optimized_planner_tree, boundPlannerNodeId);
         const { planner_node_tag: boundPlannerNodeTag, children: boundPlannerNodeChildren } = boundPlannerNode;
         if (originalResult.output_table) {
-            curOutputTable.value = convertToElTableData(originalResult.output_table)
+            curOutputTable.value = rawTableToElTableData(originalResult.output_table)
         }
 
         curInputTables.value = {};
@@ -174,7 +175,7 @@ function getCurNodeInfo(nodeId: number) {
                 let childNodeTag = child.planner_node_tag;
                 let childExecutor = ExecutorTreeMap.get(childNodeId);
                 curInputTables.value[`From ${childNodeTag}(${childNodeId})`]
-                    = convertToElTableData(childExecutor.output_table);
+                    = rawTableToElTableData(childExecutor.output_table);
             }
         }
 
@@ -198,25 +199,6 @@ function findTreeNodeById(tree: any, nodeId: number): any | null {
         }
     }
     return null;
-}
-
-function convertToElTableData(table: any[][]) {
-
-    if (!table || table.length === 0) {
-        return [];
-    }
-
-    const headers = table[0];
-    const data = table.slice(1).map(row => {
-        const obj: any = {};
-        headers.forEach((header, index) => {
-            obj[header] = row[index];
-        });
-        return obj;
-    });
-
-    const result = { headers, data };
-    return result;
 }
 
 const expressionText = ref('');

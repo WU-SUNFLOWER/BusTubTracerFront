@@ -117,6 +117,9 @@ const initTestTables = async () => {
     }
     await BusTubCore.executeSQL(`insert into course_teacher values ${values.join(',')}`);
 
+    await BusTubCore.executeSQL(`create index idx_colA on test_table_1(colA)`);
+    await BusTubCore.executeSQL(`create index idx_colA on test_table_2(colA)`);
+    await BusTubCore.executeSQL(`create index idx_colA on test_table_3(colA)`);
 };
 
 app.whenReady().then(async () => {

@@ -2,82 +2,107 @@
     <div class="container">
         <div class="left">
             <div class="header">Catalog</div>
-            <el-autocomplete :fetch-suggestions="querySearch" v-model="searchInput" @keyup.enter="handleSearch"
-                clearable style="width: 99%;margin:0.5%;">
-                <template #append>
-                    <el-button class="custom-primary-button" @click="handleSearch">Search</el-button>
-                </template>
-            </el-autocomplete>
-            <el-scrollbar style="width: 100%;
-                height: calc(100% - 35px - 40px - 25px);">
-                <el-table :data="filteredTables" style="width: 99%;margin: 0.5%;" border highlight-current-row
-                    @current-change="handleCurrentChange">
-                    <el-table-column prop="table_oid" label="Table ID"></el-table-column>
-                    <el-table-column prop="value" label="Table Name"></el-table-column>
+            <el-input 
+                v-model="searchInput"
+                clearable
+                style="width: 99%;margin:0.5%;"
+                placeholder="Search your table quickly"
+                :prefix-icon="Search"
+            >
+            </el-input>
+            <el-table
+                :data="filteredTables"
+                style="width:99%;margin:0.5%;height:calc(50% - 35px - 40px - 25px);" 
+                border 
+                highlight-current-row
+                @current-change="handleCurrentChange"
+            >
+                <el-table-column prop="table_oid" label="Table ID"></el-table-column>
+                <el-table-column prop="table_name" label="Table Name"></el-table-column>
+            </el-table>
+            <div class="header" style="border-top: 1px solid black;">Table Content</div>
+            <div class="right-table-container">
+                <h1 v-if="!hasSelectedRow" class="tip-text">Please select a table.</h1>
+                <el-table 
+                    v-if="hasSelectedRow"
+                    :data="currentTable.data"
+                    border 
+                    stripe
+                    style="width:99%;height: 99%;margin:0.5%;"
+                >
+                    <el-table-column 
+                        v-for="header in currentTable.headers" 
+                        :key="header" 
+                        :prop="header"
+                        :label="header">
+                    </el-table-column>
                 </el-table>
-            </el-scrollbar>
-            <div class="footer" style="height: 25px;width: 100%;">
-                <el-button class="footer-btn" :disabled="!hasSelectedRow" @click="showTableContent">show
-                    content</el-button>
-                <el-button class="footer-btn" :disabled="!hasSelectedRow" @click="showTableIndices">show
-                    indices</el-button>
-
             </div>
+
         </div>
         <div class="middle">
-            <div class="header">The Currently Selected Table:</div>
-            <div class="middle-header"></div>
-            <div class="middle-scroll">
-                <div class="table-info" v-if="hasSelectedRow">
-                    <div style="font-weight: bold;font-size: 18px;">The Properties of Your Table</div>
-                    <div class="table-info-item">
-                        <div class="table-info-item-item">table name</div>
-                        <div class="table-info-item-item">{{ currentRow.value }}</div>
-                    </div>
-                    <div class="table-info-item">
-                        <div class="table-info-item-item">table id</div>
-                        <div class="table-info-item-item">{{ currentRow.table_oid }}</div>
-                    </div>
-                    <div class="table-info-item">
-                        <div class="table-info-item-item">table head</div>
-                        <div class="table-info-item-item-active">...</div>
+            <h1 v-if="!hasSelectedRow" class="tip-text">Please select a table.</h1>
+            <div v-if="hasSelectedRow" style="height: 100%;">
+                <div class="header">The Currently Selected Table: {{ currentRow.table_name }}</div>
+                <div class="middle-header"></div>
+                <div class="middle-scroll">
+                    <div class="table-info" >
+                        <div style="font-weight: bold;font-size: 18px;">The Properties of Your Table</div>
+                        <div class="table-info-item">
+                            <div class="table-info-item-item">table name</div>
+                            <div class="table-info-item-item">{{ currentRow.table_name }}</div>
+                        </div>
+                        <div class="table-info-item">
+                            <div class="table-info-item-item">table id</div>
+                            <div class="table-info-item-item">{{ currentRow.table_oid }}</div>
+                        </div>
+                        <div class="table-info-item">
+                            <div class="table-info-item-item">table head</div>
+                            <div class="table-info-item-item-active">...</div>
+                        </div>
                     </div>
                 </div>
-
             </div>
-
         </div>
 
         <div class="right">
             <div class="header" style="background-color:rgb(190,190,190);">Buffer Pool</div>
-            <el-scrollbar style="width: 100%;
-                 height: calc(100% - 35px);">
-                <el-table :data="bufferPoolInfo.data.buffer_pool_info" style="width: 98%;margin: 1%;" border
-                    highlight-current-row>
-                    <el-table-column prop="frame_id" label="frame id"></el-table-column>
-                    <el-table-column prop="page_id" label="page id"></el-table-column>
-                    <el-table-column prop="is_dirty" label="is dirty"></el-table-column>
-                    <el-table-column prop="pin_count" label="pin count"></el-table-column>
-                    <el-table-column prop="is_free" label="is free"></el-table-column>
-                </el-table>
-            </el-scrollbar>
+            <el-table
+                :data="bufferPoolInfo" 
+                :row-class-name="getTableRowClassName"
+                style="width: 99%;margin: 0.5%;height: calc(100% - 45px);" 
+                border
+            >
+                <el-table-column prop="frame_id" label="Frame ID"></el-table-column>
+                <el-table-column prop="page_id" label="Page ID"></el-table-column>
+                <el-table-column prop="is_dirty" label="Is Dirty"></el-table-column>
+                <el-table-column prop="pin_count" label="Pin Count"></el-table-column>
+            </el-table>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import allTableData from '../../api/get_all_tables.json';
-import bufferPoolData from '../../api/get_buffer_pool_info.json';
-import tableData from '../../api/query_table_by_name.json';
+import { queryResultToElTableData } from '@/utils/bustub';
+import { Search } from '@element-plus/icons-vue'
 
+let bufferPoolInfo: any = ref([]);
 
-const allTableInfo = allTableData as any;
-const bufferPoolInfo = bufferPoolData as any;
+onMounted(async () => {
+    let result = await window.bustub.sendMessage("/get_all_tables", {});
+    let allTableInfo = result.data;
+
+    result = await window.bustub.sendMessage("/get_buffer_pool_info", {});
+    bufferPoolInfo.value = result.data.buffer_pool_info;
+
+    tablesInfo.value = loadAllTables(allTableInfo);
+
+});
 
 interface TableInfo {
     table_oid: number;
-    value: string;
+    table_name: string;
 }
 const searchInput = ref('');
 const tablesInfo = ref<TableInfo[]>([]);
@@ -91,50 +116,34 @@ const filteredTables = computed(() => {
     );
 });
 
-const querySearch = (queryString: string, cb: any) => {
-    const results = queryString
-        ? tablesInfo.value.filter(createFilter(queryString))
-        : tablesInfo.value;
-    cb(results);
-};
-
 const createFilter = (queryString: string) => {
     return (tableInfo: TableInfo) => {
-        const searchValue = tableInfo.value.toLowerCase();
+        const searchValue = tableInfo.table_name.toLowerCase();
         const searchOid = tableInfo.table_oid.toString().toLowerCase();
         const query = queryString.toLowerCase();
         return searchValue.includes(query) || searchOid.includes(query);
     };
 };
 
-const loadAllTables = () => {
-    return allTableInfo.data.tables.map((table: any) => ({
-        value: table.table_name,
+const loadAllTables = (allTableInfo: any) => {
+    return allTableInfo.tables.map((table: any) => ({
+        table_name: table.table_name,
         table_oid: table.table_oid,
     }));
 };
 
-onMounted(() => {
-    tablesInfo.value = loadAllTables();
-});
-
-const handleSearch = () => {
+const hasSelectedRow = ref(false);
+const currentRow = ref({  table_oid: -1, table_name: '', });
+const currentTable = ref({ data: [], headers: [] });
+const handleCurrentChange = async (val: TableInfo) => {
+    if (val) hasSelectedRow.value = true;
+    currentRow.value = val;
+    
+    let result = await window.bustub.sendMessage("/query_table_by_name", {
+        'table_name': val?.table_name
+    });
+    currentTable.value = queryResultToElTableData(result);
 };
-
-const hasSelectedRow = ref(false)
-const currentRow = ref()
-const handleCurrentChange = (val: TableInfo | undefined) => {
-    if (val) hasSelectedRow.value = true
-    currentRow.value = val
-}
-
-const tableInfo = tableData as any
-
-const showTableContent = () => {
-    console.log(tableInfo)
-}
-const showTableIndices = () => {
-}
 
 /*{
     "data": {
@@ -172,6 +181,10 @@ const showTableIndices = () => {
         ]
     }
 } */
+
+const getTableRowClassName = ({ row } : { row: any }) => {
+    return row.is_free ? "row-green" : "row-common";
+};
 
 </script>
 
@@ -261,7 +274,7 @@ const showTableIndices = () => {
 
 .left {
     margin: 5px;
-    width: 25%;
+    width: 37.5%;
     margin-right: 0px;
     border: 1px solid black;
 }
@@ -271,10 +284,11 @@ const showTableIndices = () => {
     margin: 5px;
     margin-right: 0px;
     border: 1px solid black;
+    position: relative;
 }
 
 .right {
-    width: 37.5%;
+    width: 25%;
     margin: 5px;
     border: 1px solid black;
 }
@@ -285,5 +299,23 @@ const showTableIndices = () => {
     font-weight: bold;
     border-radius: 0 5px 5px 0;
     margin-top: 1px;
+}
+
+:deep(.row-green) {
+    background: rgba(19, 206, 102, 0.8);
+}
+
+.tip-text {
+    margin: 0px;
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+}
+
+.right-table-container {
+    height:calc(50% - 20px);
+    position: relative;
 }
 </style>

@@ -6,6 +6,7 @@ export const useLinkStore = defineStore('links', {
             { to: '/home',      label: 'Home',      enabled: true },
             { to: '/process',   label: 'Process',   enabled: false },
             { to: '/storage',   label: 'Storage',   enabled: true },
+            { to: '/storage2',   label: 'Storage2',   enabled: true },
             { to: '/index',     label: 'Index',     enabled: true },
             { to: '/sqllogs',   label: 'SQL Logs',  enabled: true },
             { to: '/help',      label: 'Help',      enabled: true },

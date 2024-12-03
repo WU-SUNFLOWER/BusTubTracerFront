@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, toRefs } from 'vue';
+import { onMounted, toRefs, watch, defineEmits } from 'vue';
 import * as d3 from 'd3';
 import dagreD3 from 'dagre-d3';
 
@@ -16,9 +16,11 @@ const props = defineProps({
 
 const { bplusTree: bplusTreeData } = toRefs(props);
 
-let nowNodeId = -1;
+const emit = defineEmits(['selectNode']);
 
-let svgTransform: any = null;
+let nowNodeId = -1;
+let wrappedInnerElement = null;
+let svgElement = null;
 
 const computeColGroupElementHTML = (n: number) => {
     let radio = 100 / n;
@@ -109,21 +111,27 @@ const drawArrowLine = (
     .attr("marker-end", "url(#arrowhead)"); // 关联箭头标记>
 };
 
-const renderBPlusTree = (data: any, svgElement: any) => {
+const renderBPlusTree = (data: any, svgElement: SVGElement) => {
+
+    const wrappedSvg = d3.select(svgElement);
 
     // Clear our canvas.
-    d3.select(svgElement).selectAll('*').remove();
+    wrappedSvg.selectAll('*').remove();
 
     const g: any = new dagreD3.graphlib.Graph();
     g.setGraph({
-        rankdir: 'TB',        
-        ranksep: 100,
+        rankdir: 'TB',
     })
     .setDefaultEdgeLabel(() => ({}));
 
     // Process nodes.
+    let recordItemCount = 0;
     for (let node of [data.root, ...data.nodes]) {
-        let {parent_page_id: parentId, page_id: nodeId} = node.header;
+        let {
+            parent_page_id: parentId, 
+            page_id: nodeId,
+            page_type: nodeType
+        } = node.header;
         g.setNode(nodeId, {
             labelType: 'html',
             label: computeNodeHTML(node),
@@ -135,23 +143,35 @@ const renderBPlusTree = (data: any, svgElement: any) => {
             paddingRight: 0,
         });
         if (parentId > 0) g.setEdge(parentId, nodeId);
+        if (nodeType === "leaf_page") {
+            recordItemCount += node.key_value.length;
+        }
     }
+
+    // Compute the height of our tree figure.
+    let m = data.root.header.max_size;
+    let h = Math.floor(Math.log(recordItemCount / Math.floor(m / 2)) / Math.log(Math.floor(m / 2))) + 1;
+    g.setGraph({
+        ranksep: Math.max(100, h * 50),
+    });
 
     // Use dagreD3 to render the figure.
     const render = new dagreD3.render();
-    const svg = d3.select(svgElement);
-    const inner: any = svg.append("g");
-    if (svgTransform) {
-        inner.attr("transform", svgTransform);
-    }
-    render(inner, g);
+    wrappedInnerElement = wrappedSvg.append("g");
+    render(wrappedInnerElement, g);
 
     // Bind click handler.
-    inner.selectAll('g.node').on('click', (e: any) => {
-        let elemId = e.currentTarget.id;
+    wrappedInnerElement.selectAll('g.node').on('click', (e: any) => {
+        let elem = e.currentTarget;
+        let elemId = elem.id;
         let [_, nodeId] = elemId.match(/bplus\-tree\-node\-(\w+)/);
+        if (nowNodeId > 0) {
+            let oldElem = svgElement.getElementById(toNodeElemId(nowNodeId));
+            oldElem.classList.remove("selected");
+        }
         nowNodeId = Number.parseInt(nodeId);
-        renderBPlusTree(data, svgElement);
+        elem.classList.add("selected");
+        emit('selectNode', nowNodeId);
     });
 
     // Remove the default paths.
@@ -160,7 +180,7 @@ const renderBPlusTree = (data: any, svgElement: any) => {
     });
 
     // Create our own arrow element.
-    const linesContainer = svg.select(".edgePaths");
+    const linesContainer = wrappedSvg.select(".edgePaths");
     linesContainer
         .append("defs")
         .append("marker")
@@ -221,17 +241,35 @@ const renderBPlusTree = (data: any, svgElement: any) => {
 
     }
 
-    const zoom = d3.zoom().on("zoom", (e) => {
-        inner.attr("transform", svgTransform = e.transform);
-    });
-    svg.call(zoom);
-
 };
 
-onMounted(() => {
-    renderBPlusTree(bplusTreeData.value, document.querySelector("#b-plus-tree-svg"));
+const zoomController = d3.zoom().on("zoom", (e) => {
+    wrappedInnerElement.attr("transform", e.transform);
 });
 
+onMounted(() => {
+    // Get SVG element.
+    svgElement = document.querySelector("#b-plus-tree-svg");
+    // Bind zoom event.
+    d3.select(svgElement).call(zoomController);
+    // Render tree figure.
+    renderBPlusTree(bplusTreeData.value, svgElement);
+});
+
+watch(
+    bplusTreeData,
+    (newValue) => {
+        // Reset `wrappedInnerElement`.
+        wrappedInnerElement = null;
+        // Reset `nowNodeId`.
+        nowNodeId = -1;
+        // Rerender tree figure.
+        renderBPlusTree(newValue, svgElement);
+        // Reset zoom condition.
+        d3.select(svgElement).call(zoomController.transform, d3.zoomIdentity);
+    },
+    { deep: true }
+);
 
 </script>
 
@@ -273,7 +311,7 @@ onMounted(() => {
     cursor: pointer;
 }
 
-#b-plus-tree-svg .node table.selected td {
+#b-plus-tree-svg .node.selected table td {
     color: rgb(184,134,248);
     border: 2px dashed rgb(184,134,248);
     cursor: default;

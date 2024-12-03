@@ -22,7 +22,7 @@ export const queryResultToElTableData = (result: any) => {
     const tuples = result.data.tuples;
     const data = tuples.map((tuple: any) => {
         let cols = tuple.columns;
-        let obj: any = {};
+        let obj: any = { rid: tuple.rid };
         headers.forEach((header: string, index: number) => {
             obj[header] = cols[index];
         });

@@ -28,11 +28,13 @@
                     <h1 v-if="!hasSelectedTable" class="tip-text">Please select a table.</h1>
                     <el-table 
                         v-if="hasSelectedTable"
+                        v-loading="isTableContentAreaLoading"
                         :data="currentIndices"
                         border 
                         stripe
                         style="width:calc(100% - 2px);height:calc(99% - 2px);margin:1px;"
                         highlight-current-row
+                        show-overflow-tooltip
                         @current-change="handleCurrentIndexChange"
                     >
                         <el-table-column 
@@ -48,35 +50,114 @@
                 <div class="header" style="border-top: 1px solid black;">Table Content</div>
                 <div class="left-table-container">
                     <h1 v-if="!hasSelectedTable" class="tip-text">Please select a table.</h1>
-                    <el-table 
+                    <el-table
+                        ref="contentTableRef"
                         v-if="hasSelectedTable"
+                        v-loading="isTableContentAreaLoading"
                         :data="currentTable.data"
-                        border 
-                        stripe
-                        style="width:calc(100% - 2px);height:calc(99% - 2px);margin:1px;"
+                        border
+                        class="table-content-area"
                     >
-                        <el-table-column 
-                            v-for="header in currentTable.headers" 
-                            :key="header" 
-                            :prop="header"
-                            :label="header">
+                        <el-table-column label="Rid">
+                            <el-table-column prop="rid.page_id" label="Page ID" width="85" />
+                            <el-table-column prop="rid.slot_num" label="Slot Num" width="85" />
+                        </el-table-column>
+                        <el-table-column label="Tuple Content">
+                            <el-table-column 
+                                v-for="header in currentTable.headers" 
+                                :key="header" 
+                                :prop="header"
+                                :label="header">
+                            </el-table-column>                            
                         </el-table-column>
                     </el-table>
                 </div>                
             </div>
-
-
         </div>
         <div class="right">
             <h1 v-if="!hasSelectedIndex" class="tip-text">Please select a index item.</h1>
             <div v-if="hasSelectedIndex" style="width:100%;height:100%;">
-                <div class="header">Catalog</div>
+                <div class="header">B+ Tree Viewer <{{ currentTableNameOfRight }} : {{ currentIndexNameOfRight }}></div>
                 <div class="right-svg-container">
-                    <BPlusTree :bplusTree="currentBPlusTreeData"/>
+                    <BPlusTree :bplusTree="currentBPlusTreeData" @selectNode="selectNode"/>
                 </div>
-                <div class="header header-with-top-border">Catalog</div>
-                <div class="right-node-inspector-container">
-                    <h1>Please select a node.</h1>
+                <div class="header header-with-top-border">B+ Tree Inspector</div>
+                <div class="right-node-inspector">
+                    <h1 
+                        class="tip-text"
+                        v-if="!hasSelectedNode"
+                    >
+                        Please select a node.
+                    </h1>
+                    <div v-if="hasSelectedNode" class="right-node-inspector-container">
+                        <div class="right-node-inspector-sub-container">
+                            <p class="title">Header Information</p>
+                            <el-descriptions
+                                class="margin-top"
+                                :column="2"
+                                border
+                            >
+                                <el-descriptions-item>
+                                    <template #label>
+                                        <div class="cell-item">Page ID</div>
+                                    </template>
+                                    {{ currentNode.header.page_id }}
+                                </el-descriptions-item>
+                                <el-descriptions-item>
+                                    <template #label>
+                                        <div class="cell-item">Parent Page ID</div>
+                                    </template>
+                                    {{ currentNode.header.parent_page_id }}
+                                </el-descriptions-item>
+                                <el-descriptions-item>
+                                    <template #label>
+                                        <div class="cell-item">Current Size</div>
+                                    </template>
+                                    {{ currentNode.header.current_size }}
+                                </el-descriptions-item>
+                                <el-descriptions-item>
+                                    <template #label>
+                                        <div class="cell-item">Max Size</div>
+                                    </template>
+                                    {{ currentNode.header.max_size }}
+                                </el-descriptions-item>
+                                <el-descriptions-item>
+                                    <template #label>
+                                        <div class="cell-item">Page Type</div>
+                                    </template>
+                                    {{ currentNode.header.page_type }}
+                                </el-descriptions-item>
+                            </el-descriptions>
+                        </div>
+                        <div class="right-node-inspector-sub-container">
+                            <p class="title">Key-Value Array</p>
+                            <el-table 
+                                :data="currentNode.key_value"
+                                border
+                                style="height:calc(100% - 40px)"
+                                v-if="currentNode.header.page_type === 'internal_page'"
+                            >
+                                <el-table-column prop="index" label="Index"/>
+                                <el-table-column prop="page_id" label="Page Id"/>
+                            </el-table>
+                            <el-table 
+                                ref="kvTableRef"
+                                :data="currentNode.key_value"
+                                border
+                                style="height:calc(100% - 40px)"
+                                v-if="currentNode.header.page_type === 'leaf_page'"
+                                highlight-current-row
+                                @current-change="handleSelectLeafNode"
+                            >
+                                <el-table-column prop="index" label="Index"/>
+                                <el-table-column label="Rid">
+                                    <el-table-column prop="rid.page_id" label="Page Id"/>
+                                    <el-table-column prop="rid.slot_num" label="Slot Number"/>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+
+                    </div>
                 </div>
             </div>
 
@@ -132,46 +213,142 @@ const loadAllTables = (allTableInfo: any) => {
 
 const hasSelectedTable = ref(false);
 const hasSelectedIndex = ref(false);
+const hasSelectedNode = ref(false);
+
 const currentRow = ref({  table_oid: -1, table_name: '', });
-const currentTable = ref({ data: [], headers: [] });
+const currentTable = ref({ name: '', data: [], headers: [] });
+let currentTableNameOfRight = null;
+let currentIndexNameOfRight = null;
 const currentIndices = ref([]);
 const indicesTableHeaders = ref(['index_name', 'index_oid', 'key_schema', 'key_size']);
+const currentNode = ref({
+    header: {
+        current_size: null,
+        max_size: null,
+        page_id: null,
+        parent_page_id: null,
+        page_type: null,
+    },
+    key_value: [],
+});
 
 let currentBPlusTreeData = ref({});
+let tableTuplesMap = new Map();
+let bplusTreeNodeMap = new Map();
+
+const isTableContentAreaLoading = ref(false);
 
 const handleCurrentTableChange = async (val: TableInfo) => {
-    if (val) hasSelectedTable.value = true;
+    if (!val) {
+        return;
+    } 
+    
+    // Show loading mask.
+    isTableContentAreaLoading.value = true;
+
+    if (currentTupleIndex >= 0) {
+        const contentTableElem = contentTableRef.value.$el;
+        const oldRowElem = contentTableElem.querySelector(`.el-table__body tr:nth-child(${currentTupleIndex + 1})`);
+        oldRowElem.classList.remove("selected-tuple-row-in-index-panel");
+        currentTupleIndex = -1;
+    }
+
+    hasSelectedTable.value = true;
     currentRow.value = val;
     
     let result = await window.bustub.sendMessage("/query_table_by_name", {
         'table_name': val?.table_name
     });
 
+    tableTuplesMap.clear();
     currentTable.value = queryResultToElTableData(result);
+    currentTable.value.name = val.table_name;
+
+    result.data.tuples.forEach((tuple, index) => {
+        let { page_id, slot_num } = tuple.rid;
+        tableTuplesMap.set(`${page_id}_${slot_num}`, index);
+    });
+
     currentIndices.value = result.data.indices;
+
+    // Hide loading mask.
+    isTableContentAreaLoading.value = false;
 };
 
 const handleCurrentIndexChange = async (val: any) => {
-
+    
+    // Repainting table can also trigger `current-change` event.
+    // In this case, the value of `val` is null,
+    // and we just need to do nothing for that.
     if (!val) {
         return;
     }
-
+    
     let indexId = val.index_oid;
     let bplusTreeData = await window.bustub.sendMessage("/query_b_plus_tree", {
         'index_oid': indexId
     });
     currentBPlusTreeData.value = bplusTreeData.data;
 
+    let { root, nodes } = bplusTreeData.data;
+    bplusTreeNodeMap.clear();
+    for (let node of [root, ...nodes]) {
+        bplusTreeNodeMap.set(node.header.page_id, node);
+    }
+
+    // Record the relative table name.
+    currentTableNameOfRight = currentTable.value.name;
+    currentIndexNameOfRight = val.index_name;
+
     // Rendering b+ tree figure must be the final step.
     hasSelectedIndex.value = true;
 }
 
-const getTableRowClassName = ({ row } : { row: any }) => {
-    return row.is_free ? "row-green" : "row-common";
+const kvTableRef = ref();
+const contentTableRef = ref();
+let currentTupleIndex = -1;
+
+const handleSelectLeafNode = (val) => {
+
+    if (!val) {
+        return;
+    }
+
+    // User has selected other table in the left panel.
+    if (currentTableNameOfRight !== currentTable.value.name) {
+        return;
+    }
+
+    const contentTableElem = contentTableRef.value.$el;
+    const { page_id, slot_num } = val.rid;
+    const tupleIndex = tableTuplesMap.get(`${page_id}_${slot_num}`);
+    const rowElem = contentTableElem.querySelector(`.el-table__body tr:nth-child(${tupleIndex + 1})`);
+
+    if (currentTupleIndex >= 0) {
+        const oldRowElem = contentTableElem.querySelector(`.el-table__body tr:nth-child(${currentTupleIndex + 1})`);
+        oldRowElem.classList.remove("selected-tuple-row-in-index-panel");
+    }
+    currentTupleIndex = tupleIndex;
+
+    rowElem.classList.add("selected-tuple-row-in-index-panel");
+    rowElem.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+    });
+}
+
+const selectNode = (nodeId) => {
+    hasSelectedNode.value = true;
+    currentNode.value = bplusTreeNodeMap.get(nodeId);
 };
 
 </script>
+
+<style>
+.selected-tuple-row-in-index-panel {
+    background: rgb(255, 0, 0) !important;
+}
+</style>
 
 <style scoped>
 .table-info-item-item-active {
@@ -249,6 +426,7 @@ const getTableRowClassName = ({ row } : { row: any }) => {
     line-height: 35px;
     height: 35px;
     border-bottom: 1px solid black;
+    background-color: rgb(190, 190, 190);
 }
 
 .header-with-top-border {
@@ -309,10 +487,42 @@ const getTableRowClassName = ({ row } : { row: any }) => {
 
 .right-svg-container {
     width: 100%;
-    height: calc(100% - 35px - 35px - 27%);
+    height: calc(100% - 35px - 35px - 30%);
+}
+
+.right-node-inspector {
+    height: 30%;
+    position: relative;
 }
 
 .right-node-inspector-container {
-    height: 27%;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+}
+
+.right-node-inspector-sub-container {
+    margin: 25px;
+    width: calc(50% - 50px);
+    height: calc(100% - 50px);
+}
+
+.right-node-inspector-container p.title {
+    line-height: 25px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: bold;    
+}
+
+.cell-item {
+  display: flex;
+  align-items: center;
+}
+
+.table-content-area {
+    width: calc(100% - 2px);
+    height: calc(99% - 2px);
+    margin: 1px;
 }
 </style>

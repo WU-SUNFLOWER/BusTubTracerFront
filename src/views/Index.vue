@@ -69,9 +69,17 @@
         </div>
         <div class="right">
             <h1 v-if="!hasSelectedIndex" class="tip-text">Please select a index item.</h1>
-            <div v-if="hasSelectedIndex" class="right-svg-container">
-                <BPlusTree :bplusTree="currentBPlusTreeData"/>
+            <div v-if="hasSelectedIndex" style="width:100%;height:100%;">
+                <div class="header">Catalog</div>
+                <div class="right-svg-container">
+                    <BPlusTree :bplusTree="currentBPlusTreeData"/>
+                </div>
+                <div class="header header-with-top-border">Catalog</div>
+                <div class="right-node-inspector-container">
+                    <h1>Please select a node.</h1>
+                </div>
             </div>
+
         </div>
     </div>
 </template>
@@ -243,6 +251,10 @@ const getTableRowClassName = ({ row } : { row: any }) => {
     border-bottom: 1px solid black;
 }
 
+.header-with-top-border {
+    border-top: 1px solid black;
+}
+
 .container {
     position: relative;
     display: flex;
@@ -297,6 +309,10 @@ const getTableRowClassName = ({ row } : { row: any }) => {
 
 .right-svg-container {
     width: 100%;
-    height: 100%;
+    height: calc(100% - 35px - 35px - 27%);
+}
+
+.right-node-inspector-container {
+    height: 27%;
 }
 </style>

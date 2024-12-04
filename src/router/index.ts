@@ -29,11 +29,6 @@ const router = createRouter({
       component: () => import("../views/Storage.vue"),
     },
     {
-      path: '/storage2',
-      name: 'storage2',
-      component: () => import("../views/Storage2.vue"),
-    },
-    {
       path: '/help',
       name: 'help',
       component: () => import("../views/Help.vue"),

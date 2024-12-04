@@ -1,110 +1,190 @@
 <template>
-
     <div class="container">
         <div class="left">
             <div class="header">Catalog</div>
-            <el-autocomplete :fetch-suggestions="querySearch" v-model="searchInput" @keyup.enter="handleSearch"
-                clearable style="width: 99%;margin:0.5%;">
-                <template #append>
-                    <el-button class="custom-primary-button" @click="handleSearch">Search</el-button>
-                </template>
-            </el-autocomplete>
-            <el-scrollbar style="width: 100%;
-                height: calc(100% - 35px - 40px - 25px);">
-                <el-table :data="filteredTables" style="width: 99%;margin: 0.5%;" border highlight-current-row
-                    @current-change="handleCurrentChange">
-                    <el-table-column prop="table_oid" label="Table ID"></el-table-column>
-                    <el-table-column prop="value" label="Table Name"></el-table-column>
+            <el-input v-model="searchInput" clearable style="width: 99%;margin:0.5%;"
+                placeholder="Search your table quickly" :prefix-icon="Search">
+            </el-input>
+            <el-table :data="filteredTables" style="width:99%;margin:0.5%;height:calc(50% - 35px - 40px - 25px);" border
+                highlight-current-row @current-change="handleCurrentChange">
+                <el-table-column prop="table_oid" label="Table ID"></el-table-column>
+                <el-table-column prop="table_name" label="Table Name"></el-table-column>
+            </el-table>
+            <div class="header" style="border-top: 1px solid black;">Table Content</div>
+            <div class="right-table-container">
+                <h1 v-if="!hasSelectedRow" class="tip-text">Please select a table.</h1>
+                <el-table v-if="hasSelectedRow" :data="currentTable.data" border stripe
+                    style="width:99%;height: 99%;margin:0.5%;">
+                    <el-table-column v-for="header in currentTable.headers" :key="header" :prop="header"
+                        :label="header">
+                    </el-table-column>
                 </el-table>
-            </el-scrollbar>
-            <div class="footer" style="height: 25px;width: 100%;">
-                <el-button class="footer-btn" :disabled="!hasSelectedRow" @click="showTableContent">show
-                    content</el-button>
-                <el-button class="footer-btn" :disabled="!hasSelectedRow" @click="showTableIndices">show
-                    indices</el-button>
-
             </div>
+
         </div>
         <div class="middle">
-            <div class="header" v-if="!hasSelectedRow">The Currently Selected Table:</div>
-            <div class="header" v-else>The Currently Selected Table:{{ currentRow.value }}</div>
-            <div class="middle-header">
-                <div class="middle-header-tag" @click="gotoTableInfo" v-if="hasSelectedRow">>table info</div>
-                <div class="middle-header-tag" @click="gotoTableHeap" v-if="hasSelectedTableHeap">>table heap</div>
-                <div class="middle-header-tag" @click="gotoTablePage(tablePageInfo.data.page_id)"
-                    v-if="hasSelectedTablePage">
-                    >table page{{ tablePageInfo.data.page_id }}
+            <h1 v-if="!hasSelectedRow" class="tip-text">Please select a table.</h1>
+            <div v-if="hasSelectedRow" style="height: 100%;">
+                <div class="header">The Currently Selected Table: {{ currentRow.table_name }}</div>
+                <div class="middle-header">
+                    <el-breadcrumb :separator-icon="ArrowRight" class="custom-breadcrumb">
+                        <el-breadcrumb-item v-if="hasSelectedRow" @click="gotoTableInfo" class="middle-header-tag">Table
+                            Info</el-breadcrumb-item>
+                        <el-breadcrumb-item v-if="hasSelectedTableHeap" class="middle-header-tag"
+                            @click="gotoTableHeap">Table
+                            Heap</el-breadcrumb-item>
+                        <el-breadcrumb-item v-if="hasSelectedTablePage" @click="gotoTablePage(tablePageInfo.page_id)"
+                            class="middle-header-tag">Table
+                            Page{{ tablePageInfo.page_id }}</el-breadcrumb-item>
+                        <el-breadcrumb-item v-if="hasSelectedTableTuple"
+                            @click="gotoTableTuple(tableTupleInfo.slot_num)" class="middle-header-tag">Tuple{{
+                                tableTupleInfo.slot_num + 1 }}</el-breadcrumb-item>
+                        <el-breadcrumb-item v-if="hasSelectedTableValue" class="middle-header-tag">Value{{
+                            TableValueInfo + 1 }}</el-breadcrumb-item>
+                    </el-breadcrumb>
                 </div>
-            </div>
-            <div class="middle-scroll">
-                <div class="page-content" v-if="hasSelectedTablePage">
-                    <div class="page-header">
-                        Header (Size=24B)
-                    </div>
-                    <div class="table-info-item1">
-                        <div class="table-info-item-item1">table name</div>
-                        <div class="table-info-item-item1"></div>
-                    </div>
-                </div>
-                <div class="table-info" v-else-if="hasSelectedTableHeap">
-                    <div v-for="(value, index) in tableHeapInfo.data.table_page_ids">
-                        <div class="table-page-arrow" v-if="index != 0">↑↓</div>
+                <el-scrollbar class="middle-scroll">
+                    <div v-if="hasSelectedTableValue" class="table-info">
                         <div class="table-info-item">
-                            <div class="table-info-item-item">table page {{ value }}</div>
-                            <div class="table-info-item-item-active" @click="gotoTablePage(value)">...</div>
+                            <div class="table-info-item-item">value</div>
+                            <div class="table-info-item-item">{{ tableTupleInfo.values[TableValueInfo].value }}</div>
+                        </div>
+                        <div class="table-info-item">
+                            <div class="table-info-item-item">size</div>
+                            <div class="table-info-item-item">{{ tableTupleInfo.values[TableValueInfo].size }}</div>
+                        </div>
+                        <div class="table-info-item">
+                            <div class="table-info-item-item">type</div>
+                            <div class="table-info-item-item">{{ tableTupleInfo.values[TableValueInfo].type }}</div>
                         </div>
                     </div>
-                </div>
-                <div class="table-info" v-else-if="hasSelectedRow">
-                    <div style="font-weight: bold;font-size: 18px;">The Properties of Your Table</div>
-                    <div class="table-info-item">
-                        <div class="table-info-item-item">table name</div>
-                        <div class="table-info-item-item">{{ currentRow.value }}</div>
+                    <div v-else-if="hasSelectedTableTuple" class="page-content">
+                        <div class="page-header">
+                            Properties
+                        </div>
+                        <div class="table-info-item1">
+                            <div class="table-info-item-item1">allocated</div>
+                            <div class="table-info-item-item1">{{ tableTupleInfo.allocated }}</div>
+                        </div>
+                        <div class="table-info-item1">
+                            <div class="table-info-item-item1">rid</div>
+                            <div class="table-info-item-item1">
+                                <div class="table-info-item1">
+                                    <div class="table-info-item-item1">page id={{ tableTupleInfo.page_id }}</div>
+                                    <div class="table-info-item-item1">slot num={{ tableTupleInfo.slot_num }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-info-item1">
+                            <div class="table-info-item-item1">size</div>
+                            <div class="table-info-item-item1">{{ tableTupleInfo.size }}B</div>
+                        </div>
+                        <div class="page-header">
+                            Data
+                        </div>
+                        <div class="table-info-item1" v-for="(value, index) in tableTupleInfo.values">
+                            <div class="table-info-item-item1">value {{ index + 1 }}</div>
+                            <div class="table-info-item-item-active2" @click="gotoTableValue(index)">...</div>
+                        </div>
                     </div>
-                    <div class="table-info-item">
-                        <div class="table-info-item-item">table id</div>
-                        <div class="table-info-item-item">{{ currentRow.table_oid }}</div>
+                    <div class="page-content" v-else-if="hasSelectedTablePage">
+                        <div class="page-header">
+                            Header (Size=24B)
+                        </div>
+                        <div class="table-info-item1">
+                            <div class="table-info-item-item1">PageId</div>
+                            <div class="table-info-item-item1">{{ tablePageInfo.page_id }}</div>
+                        </div>
+                        <div class="table-info-item1">
+                            <div class="table-info-item-item1">PrePageId</div>
+                            <div class="table-info-item-item1">{{ tablePageInfo.pre_page_id }}</div>
+                        </div>
+                        <div class="table-info-item1">
+                            <div class="table-info-item-item1">NextPageId</div>
+                            <div class="table-info-item-item1">{{ tablePageInfo.next_page_id }}</div>
+                        </div>
+                        <div class="table-info-item1">
+                            <div class="table-info-item-item1">TupleCount</div>
+                            <div class="table-info-item-item1">{{ tablePageInfo.tuple_count }}</div>
+                        </div>
+                        <div class="page-header">
+                            Free Space (Size={{ tablePageInfo.size_of_free_space }}B)
+                        </div>
+                        <div class="page-header">
+                            Tuple Array (Size={{ tablePageInfo.size_of_tuple_array }}B)
+                        </div>
+                        <div class="table-info-item1" v-for="(_, index) in Array(tablePageInfo.tuple_count).fill(null)"
+                            :key="index">
+                            <div class="table-info-item-item2">&nbsp;&nbsp;tuple {{ tablePageInfo.tuple_count -
+                                index }}
+                            </div>
+                            <div class="table-info-item-item-active2"
+                                @click="gotoTableTuple(tablePageInfo.tuple_count - index - 1)">...</div>
+                        </div>
                     </div>
-                    <div class="table-info-item">
-                        <div class="table-info-item-item">table heap</div>
-                        <div class="table-info-item-item-active" @click="gotoTableHeap">...</div>
+                    <div class="table-info" v-else-if="hasSelectedTableHeap">
+                        <div v-for="(value, index) in tableHeapInfo.table_page_ids">
+                            <div class="table-page-arrow" v-if="index != 0">↑↓</div>
+                            <div class="table-info-item">
+                                <div class="table-info-item-item">table page {{ value }}</div>
+                                <div class="table-info-item-item-active" @click="gotoTablePage(value)">...</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                    <div class="table-info" v-else-if="hasSelectedRow">
+                        <div style="font-weight: bold;font-size: 18px;">The Properties of Your Table</div>
+                        <div class="table-info-item">
+                            <div class="table-info-item-item">Table Name</div>
+                            <div class="table-info-item-item">{{ currentRow.table_name }}</div>
+                        </div>
+                        <div class="table-info-item">
+                            <div class="table-info-item-item">Table ID</div>
+                            <div class="table-info-item-item">{{ currentRow.table_oid }}</div>
+                        </div>
+                        <div class="table-info-item">
+                            <div class="table-info-item-item">Table Head</div>
+                            <div class="table-info-item-item-active" @click="gotoTableHeap">...</div>
+                        </div>
+                    </div>
+                </el-scrollbar>
             </div>
-
         </div>
 
         <div class="right">
             <div class="header" style="background-color:rgb(190,190,190);">Buffer Pool</div>
-            <el-scrollbar style="width: 100%;
-                 height: calc(100% - 35px);">
-                <el-table :data="bufferPoolInfo.data.buffer_pool_info" style="width: 98%;margin: 1%;" border
-                    highlight-current-row>
-                    <el-table-column prop="frame_id" label="frame id"></el-table-column>
-                    <el-table-column prop="page_id" label="page id"></el-table-column>
-                    <el-table-column prop="is_dirty" label="is dirty"></el-table-column>
-                    <el-table-column prop="pin_count" label="pin count"></el-table-column>
-                    <el-table-column prop="is_free" label="is free"></el-table-column>
-                </el-table>
-            </el-scrollbar>
+            <el-table :data="bufferPoolInfo" :row-class-name="getTableRowClassName"
+                style="width: 99%;margin: 0.5%;height: calc(100% - 45px);" border>
+                <el-table-column prop="frame_id" label="Frame ID"></el-table-column>
+                <el-table-column prop="page_id" label="Page ID"></el-table-column>
+                <el-table-column prop="is_dirty" label="Is Dirty"></el-table-column>
+                <el-table-column prop="pin_count" label="Pin Count"></el-table-column>
+            </el-table>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import allTableData from '../../api/get_all_tables.json';
-import bufferPoolData from '../../api/get_buffer_pool_info.json';
-import tableData from '../../api/query_table_by_name.json';
-import tableHeapData from '../../api/get_table_heap_info.json';
-import tablePageData from '../../api/get_table_page_info.json';
+import { queryResultToElTableData } from '@/utils/bustub';
+import { Search, ArrowRight } from '@element-plus/icons-vue';
 
-const allTableInfo = allTableData as any;
-const bufferPoolInfo = bufferPoolData as any;
+
+let bufferPoolInfo: any = ref([]);
+
+onMounted(async () => {
+    let result = await window.bustub.sendMessage("/get_all_tables", {});
+    let allTableInfo = result.data;
+
+    result = await window.bustub.sendMessage("/get_buffer_pool_info", {});
+    bufferPoolInfo.value = result.data.buffer_pool_info;
+
+    tablesInfo.value = loadAllTables(allTableInfo);
+
+});
 
 interface TableInfo {
     table_oid: number;
-    value: string;
+    table_name: string;
 }
 const searchInput = ref('');
 const tablesInfo = ref<TableInfo[]>([]);
@@ -118,114 +198,159 @@ const filteredTables = computed(() => {
     );
 });
 
-const querySearch = (queryString: string, cb: any) => {
-    const results = queryString
-        ? tablesInfo.value.filter(createFilter(queryString))
-        : tablesInfo.value;
-    cb(results);
-};
-
 const createFilter = (queryString: string) => {
     return (tableInfo: TableInfo) => {
-        const searchValue = tableInfo.value.toLowerCase();
+        const searchValue = tableInfo.table_name.toLowerCase();
         const searchOid = tableInfo.table_oid.toString().toLowerCase();
         const query = queryString.toLowerCase();
         return searchValue.includes(query) || searchOid.includes(query);
     };
 };
 
-const loadAllTables = () => {
-    return allTableInfo.data.tables.map((table: any) => ({
-        value: table.table_name,
+const loadAllTables = (allTableInfo: any) => {
+    return allTableInfo.tables.map((table: any) => ({
+        table_name: table.table_name,
         table_oid: table.table_oid,
     }));
 };
 
-onMounted(() => {
-    tablesInfo.value = loadAllTables();
+const hasSelectedRow = ref(false);
+const currentRow = ref({ table_oid: -1, table_name: '', });
+const currentTable = ref({
+    data: [],
+    headers: [],
+    table_name: '',
+    table_oid: -1,
 });
+const handleCurrentChange = async (val: TableInfo) => {
+    if (val) hasSelectedRow.value = true;
+    currentRow.value = val;
 
-const handleSearch = () => {
+    let result = await window.bustub.sendMessage("/query_table_by_name", {
+        'table_name': val?.table_name
+    });
+    const res = queryResultToElTableData(result);
+    currentTable.value.headers = res.headers;
+    currentTable.value.data = res.data;
+    currentTable.value.table_name = result.data.table_name;
+    currentTable.value.table_oid = result.data.table_oid;
+
+    if (hasSelectedTablePage.value) {
+        gotoTableInfo()
+    }
+    else if (hasSelectedTableHeap.value) {
+        gotoTableHeap()
+    }
 };
 
-const hasSelectedRow = ref(false)
-const currentRow = ref()
-const handleCurrentChange = (val: TableInfo | undefined) => {
-    if (val) hasSelectedRow.value = true
-    currentRow.value = val
-}
+const getTableRowClassName = ({ row }: { row: any }) => {
+    return row.is_free ? "row-green" : "row-common";
+};
 
-const tableInfo = tableData as any
-
-const showTableContent = () => {
-    console.log(tableInfo)
-}
-const showTableIndices = () => {
-}
-
-const hasSelectedTableHeap = ref(false)
-const hasSelectedTablePage = ref(false)
-const tableHeapInfo = ref()
-const tablePageInfo = ref()
+const hasSelectedTableHeap = ref(false);
+const hasSelectedTablePage = ref(false);
+const hasSelectedTableTuple = ref(false);
+const hasSelectedTableValue = ref(false)
+const tableHeapInfo = ref();
+const tablePageInfo = ref();
+const tableTupleInfo = ref();
+const TableValueInfo = ref();
 
 const gotoTableInfo = () => {
-    hasSelectedTableHeap.value = false
-    hasSelectedTablePage.value = false
-}
-const gotoTableHeap = () => {
-    hasSelectedTableHeap.value = true
-    hasSelectedTablePage.value = false
-    tableHeapInfo.value = tableHeapData
-}
+    hasSelectedTableHeap.value = false;
+    hasSelectedTablePage.value = false;
+    hasSelectedTableTuple.value = false;
+    hasSelectedTableValue.value = false;
+};
 
-const gotoTablePage = (value: number) => {
-    hasSelectedTablePage.value = true
-    tablePageInfo.value = tablePageData
-}
+const gotoTableHeap = async () => {
+    const result = await window.bustub.sendMessage("/get_table_heap_info", {
+        "table_oid": currentTable.value.table_oid
+    });
+    tableHeapInfo.value = result.data;
+    hasSelectedTableValue.value = false;
+    hasSelectedTableTuple.value = false;
+    hasSelectedTablePage.value = false;
+    // Make sure the render step as the final step.
+    hasSelectedTableHeap.value = true;
+};
 
-/*{
-    "data": {
-        "table_oid": 1,
-        "table_name": "student",
-        "column_names": [
-            "id",
-            "name",
-            "sex",
-            "age",
-            "score"
-        ],
-        "tuples": [
-            {
-                "rid": {
-                    "page_id": 1,
-                    "slot_num": 16
-                },
-                "columns": [
-                    1,
-                    "xy",
-                    0,
-                    1,
-                    100
-                ]
-            }
-        ],
-        "indices": [
-            {
-                "index_oid": 1,
-                "index_name": "student_score_index",
-                "key_schema": "(score(INT, 4))",
-                "key_size": 4
-            }
-        ]
-    }
-} */
+const gotoTablePage = async (value: number) => {
+    const result = await window.bustub.sendMessage("/get_table_page_info", {
+        "page_id": value
+    });
+    tablePageInfo.value = result.data;
+    hasSelectedTableValue.value = false;
+    hasSelectedTableTuple.value = false;
+    hasSelectedTablePage.value = true;
+};
+
+const gotoTableTuple = async (value: number) => {
+    const result = await window.bustub.sendMessage("/get_tuple_info", {
+        "table_oid": currentTable.value.table_oid,
+        "page_id": tablePageInfo.value.page_id,
+        "slot_num": value
+    });
+    tableTupleInfo.value = result.data;
+    hasSelectedTableValue.value = false;
+    hasSelectedTableTuple.value = true;
+
+};
+
+const gotoTableValue = async (value: number) => {
+    TableValueInfo.value = value;
+    hasSelectedTableValue.value = true;
+};
 
 </script>
 
 <style scoped>
+.table-info-item-item-active2 {
+    width: 50%;
+    border-left: 1px solid rgb(190, 190, 190);
+    border-bottom: 1px solid rgb(190, 190, 190);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    background-color: rgb(117, 249, 253);
+    cursor: pointer;
+}
+
+.table-info-item-item2 {
+    width: 50%;
+    border-left: 1px solid rgb(190, 190, 190);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    /* justify-content: center; */
+    /* padding-left: 10px; */
+    font-size: 12px;
+}
+
+.table-info-item-item1 {
+    width: 50%;
+    border-left: 1px solid rgb(190, 190, 190);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.table-info-item1 {
+    width: 100%;
+    height: 35px;
+    display: flex;
+    border-bottom: 1px solid rgb(190, 190, 190);
+}
+
 .page-header {
     height: 35px;
     width: 100%;
+    border-bottom: 1px solid rgb(190, 190, 190);
     background-color: rgb(162, 239, 77);
     display: flex;
     align-items: center;
@@ -234,22 +359,14 @@ const gotoTablePage = (value: number) => {
     font-size: 14px;
 }
 
-.table-page-arrow {
-    font-size: 30px;
-    margin: 20px;
-    padding-right: 50%;
-    color: rgb(153, 153, 153);
+.page-content {
+    width: 100%;
+
 }
 
 .middle-header-tag {
-    background-color: rgb(190, 190, 190);
-    border-radius: 10px;
-    margin: 1px;
-    padding: 3px;
-    font-weight: 500;
-    font-size: 14px;
-    padding-top: 7px;
     cursor: pointer;
+    font-size: 12px;
 }
 
 .table-info-item-item-active {
@@ -266,26 +383,15 @@ const gotoTablePage = (value: number) => {
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-.page-content {
-    width: 100%;
-
-}
-
 .table-info {
-    overflow-y: auto;
-    padding: 40px;
-    width: 100%;
+    margin: 40px;
+    width: calc(100% - 80px);
     text-align: center;
 }
 
 .middle-scroll {
     width: 100%;
     height: calc(100% - 35px - 45px);
-    display: flex;
-    /* align-items: center; */
-    justify-content: center;
-    overflow: auto;
-
 }
 
 .table-info-item-item {
@@ -298,12 +404,6 @@ const gotoTablePage = (value: number) => {
     font-weight: bold;
     font-size: 14px;
 
-}
-
-.table-info-item1 {
-    width: 100%;
-    height: 50px;
-    display: flex;
 }
 
 .table-info-item {
@@ -326,12 +426,13 @@ const gotoTablePage = (value: number) => {
 }
 
 .middle-header {
-    background-color: rgb(206, 206, 206);
-    display: flex;
+    background-color: #ccc;
     width: 100%;
     height: 40px;
-    border-top: 3px solid black;
     border-bottom: 1px solid black;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .header {
@@ -350,7 +451,7 @@ const gotoTablePage = (value: number) => {
 
 .left {
     margin: 5px;
-    width: 25%;
+    width: 37.5%;
     margin-right: 0px;
     border: 1px solid black;
 }
@@ -360,10 +461,11 @@ const gotoTablePage = (value: number) => {
     margin: 5px;
     margin-right: 0px;
     border: 1px solid black;
+    position: relative;
 }
 
 .right {
-    width: 37.5%;
+    width: 25%;
     margin: 5px;
     border: 1px solid black;
 }
@@ -374,5 +476,37 @@ const gotoTablePage = (value: number) => {
     font-weight: bold;
     border-radius: 0 5px 5px 0;
     margin-top: 1px;
+}
+
+:deep(.row-green) {
+    background: rgba(19, 206, 102, 0.8);
+}
+
+.tip-text {
+    margin: 0px;
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+}
+
+.right-table-container {
+    height: calc(50% - 20px);
+    position: relative;
+}
+
+.custom-breadcrumb {
+    font-size: 16px;
+    line-height: 16px;
+    margin-left: 3px;
+    margin-right: 3px;
+}
+
+.table-page-arrow {
+    font-size: 30px;
+    margin: 20px;
+    padding-right: 50%;
+    color: rgb(153, 153, 153);
 }
 </style>

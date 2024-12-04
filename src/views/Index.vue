@@ -216,9 +216,9 @@ const hasSelectedIndex = ref(false);
 const hasSelectedNode = ref(false);
 
 const currentRow = ref({  table_oid: -1, table_name: '', });
-const currentTable = ref({ name: '', data: [], headers: [] });
-let currentTableNameOfRight = null;
-let currentIndexNameOfRight = null;
+const currentTable = ref({ table_name: '', table_oid: -1, data: [], headers: [] });
+let currentTableNameOfRight: string = '';
+let currentIndexNameOfRight: string = '';
 const currentIndices = ref([]);
 const indicesTableHeaders = ref(['index_name', 'index_oid', 'key_schema', 'key_size']);
 const currentNode = ref({
@@ -262,9 +262,8 @@ const handleCurrentTableChange = async (val: TableInfo) => {
 
     tableTuplesMap.clear();
     currentTable.value = queryResultToElTableData(result);
-    currentTable.value.name = val.table_name;
 
-    result.data.tuples.forEach((tuple, index) => {
+    result.data.tuples.forEach((tuple: any, index: number) => {
         let { page_id, slot_num } = tuple.rid;
         tableTuplesMap.set(`${page_id}_${slot_num}`, index);
     });
@@ -297,7 +296,7 @@ const handleCurrentIndexChange = async (val: any) => {
     }
 
     // Record the relative table name.
-    currentTableNameOfRight = currentTable.value.name;
+    currentTableNameOfRight = currentTable.value.table_name;
     currentIndexNameOfRight = val.index_name;
 
     // Rendering b+ tree figure must be the final step.
@@ -308,14 +307,14 @@ const kvTableRef = ref();
 const contentTableRef = ref();
 let currentTupleIndex = -1;
 
-const handleSelectLeafNode = (val) => {
+const handleSelectLeafNode = (val: any) => {
 
     if (!val) {
         return;
     }
 
     // User has selected other table in the left panel.
-    if (currentTableNameOfRight !== currentTable.value.name) {
+    if (currentTableNameOfRight !== currentTable.value.table_name) {
         return;
     }
 
@@ -337,7 +336,7 @@ const handleSelectLeafNode = (val) => {
     });
 }
 
-const selectNode = (nodeId) => {
+const selectNode = (nodeId: number) => {
     hasSelectedNode.value = true;
     currentNode.value = bplusTreeNodeMap.get(nodeId);
 };

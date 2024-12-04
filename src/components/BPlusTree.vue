@@ -19,8 +19,8 @@ const { bplusTree: bplusTreeData } = toRefs(props);
 const emit = defineEmits(['selectNode']);
 
 let nowNodeId = -1;
-let wrappedInnerElement = null;
-let svgElement = null;
+let wrappedInnerElement: any = null;
+let svgElement: any = null;
 
 const computeColGroupElementHTML = (n: number) => {
     let radio = 100 / n;
@@ -111,7 +111,7 @@ const drawArrowLine = (
     .attr("marker-end", "url(#arrowhead)"); // 关联箭头标记>
 };
 
-const renderBPlusTree = (data: any, svgElement: SVGElement) => {
+const renderBPlusTree = (data: any, svgElement: any) => {
 
     const wrappedSvg = d3.select(svgElement);
 

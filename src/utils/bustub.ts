@@ -28,5 +28,5 @@ export const queryResultToElTableData = (result: any) => {
         });
         return obj;
     });
-    return { headers, data };
+    return { headers, data, table_name: result.data.table_name, table_oid: result.data.table_oid, };
 };

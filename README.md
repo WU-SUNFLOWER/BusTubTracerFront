@@ -31,7 +31,7 @@ BusTubTracer在架构上由两部分组成，分别为前端用户界面`BusTubT
 
 - 代码编辑器：Visual Studio Code
 
-# 关键目录介绍
+# 关键目录
 
 - `electron/`: 内含Electron应用程序的初始化JavaScript代码。以及基于Node.js API实现的进程间通信机制，以实现与`BusTubCore`进程之间的通信。
 - `resource/`：放置应用图标等资源文件。

@@ -35,7 +35,7 @@ BusTubTracer在架构上由两部分组成，分别为前端用户界面`BusTubT
 
 - `electron/`: 内含Electron应用程序的初始化JavaScript代码。以及基于Node.js API实现的进程间通信机制，以实现与`BusTubCore`进程之间的通信。
 - `resource/`：放置应用图标等资源文件。
-- `server/`：放置后端核心`BusTubCore`的构建产物。
+- `server/`：放置后端核心`BusTubCore`源代码构建所得的二进制文件。具体请参考[这里](https://github.com/WU-SUNFLOWER/BusTubTracerCore?tab=readme-ov-file#%E6%9E%84%E5%BB%BA)。
 - `src/`：放置前端页面代码，内部结构与一般的Vue3项目无异。
 - `test_front`：本项目开发初期（前端界面搭建起来之前）用于调试`BusTubCore`暴露接口的小工具。若要启动该工具，修改`electron/main.js`中的`createWindow`函数，使Electron启动后能以`test_front/index.html`作为渲染页面即可。
 

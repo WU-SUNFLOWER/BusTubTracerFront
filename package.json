@@ -10,7 +10,7 @@
     "dev": "vite",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
-    "electron": "npm run dev && electron .",
+    "electron": "electron .",
     "clean": "rm -rf release dist ./resource/icons",
     "build:vue": "run-p type-check \"build-only {@}\" --",
     "build:icon": "./node_modules/.bin/electron-icon-builder --input=./resource/icon.png --output=./resource/",

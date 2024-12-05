@@ -223,7 +223,8 @@ const currentTable = ref({
     table_oid: -1,
 });
 const handleCurrentChange = async (val: TableInfo) => {
-    if (val) hasSelectedRow.value = true;
+    if (!val) return
+    hasSelectedRow.value = true;
     currentRow.value = val;
 
     let result = await window.bustub.sendMessage("/query_table_by_name", {

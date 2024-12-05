@@ -41,13 +41,13 @@ BusTubTracer在架构上由两部分组成，分别为前端用户界面`BusTubT
 
 # 常用命令
 
+**以下所有命令都必须在源码根目录，即含`package.json`文件的目录下执行！**
+
 安装前端开发所依赖的包：
 
 ```shell
 npm install
 ```
-
-> Tip：请在源码根目录，即含`package.json`文件的目录下执行该命令！
 
 启动Vue3开发服务器：
 

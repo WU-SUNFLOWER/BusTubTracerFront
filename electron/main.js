@@ -1,45 +1,42 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import path from 'path';
+import path, { resolve, dirname } from 'path';
 import process from 'process';
 import BusTubCore from './bustub_core.js';
+import { fileURLToPath } from 'url';
+
+// Reference: https://www.npmjs.com/package/electron-is-dev
+const isDev = () => {
+    if (typeof electron === 'string') {
+        throw new TypeError('Not running in an Electron environment!');
+    }
+    
+    const { env } = process;
+    const isEnvSet = 'ELECTRON_IS_DEV' in env;
+    const getFromEnv = Number.parseInt(env.ELECTRON_IS_DEV, 10) === 1;
+    
+    return isEnvSet ? getFromEnv : !app.isPackaged;
+};
 
 const createWindow = () => {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const htmlPath = "./dist/index.html";
+    const preloadPath = "./electron/preload.js"
+
     const mainWindow = new BrowserWindow({
         width: 1280,
         height: 720,
         //resizable: false,
         webPreferences: {
-            preload: path.join(process.cwd(), 'electron/preload.js'),
+            preload: path.join(__dirname, '../', preloadPath),
         },
     });
-    //mainWindow.loadFile(path.join(process.cwd(), 'test_front/index.html'));
-    mainWindow.loadURL("http://localhost:5173/");
-
-    mainWindow.webContents.on('devtools-opened', () => {
-        const css = `
-        :root {
-            --sys-color-base: var(--ref-palette-neutral100);
-            --source-code-font-family: consolas;
-            --source-code-font-size: 12px;
-            --monospace-font-family: consolas;
-            --monospace-font-size: 12px;
-            --default-font-family: system-ui, sans-serif;
-            --default-font-size: 12px;
-        }
-        .-theme-with-dark-background {
-            --sys-color-base: var(--ref-palette-secondary25);
-        }
-        body {
-            --default-font-family: system-ui,sans-serif;
-        }`;
-        mainWindow.webContents.devToolsWebContents.executeJavaScript(`
-        const overriddenStyle = document.createElement('style');
-        overriddenStyle.innerHTML = '${css.replaceAll('\n', ' ')}';
-        document.body.append(overriddenStyle);
-        document.body.classList.remove('platform-windows');`);
-    });
-    
-
+    if (isDev()) {
+        mainWindow.loadURL("http://localhost:5173/");
+    } else {
+        mainWindow.setMenu(null);
+        mainWindow.loadFile(path.join(__dirname, '../', htmlPath));
+    }
 };
 
 const handleIpcRequirement = () => {
@@ -137,4 +134,3 @@ app.on(
         callback(true);
     }
 );
-

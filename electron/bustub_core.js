@@ -6,7 +6,7 @@ import { spawn } from 'child_process';
 
 const BusTubCore = {
     
-    ELF_PATH: path.join(process.cwd(), "server/socket_server"),
+    ELF_PATH: "./server/socket_server",
 
     SOCKET_PATH: "/tmp/bustub_core_socket",
 
@@ -43,7 +43,7 @@ const BusTubCore = {
         const __filename = fileURLToPath(import.meta.url);
         const __dirname = dirname(__filename);
         
-        //this.ELF_PATH = path.join(__dirname, '../', '../', this.ELF_PATH);
+        this.ELF_PATH = path.join(__dirname, '../', this.ELF_PATH);
 
         if (this.process != null || this.connection != null) {
             console.log("connection to BusTubCore has already been built!");

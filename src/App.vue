@@ -2,19 +2,18 @@
   <div class="container">
     <div class="header">
       <div class="header-nav">
-        <router-link
-          v-for="link in linkStore.links"
-          :to="link.to"
-          class="nav-item"
-          :class="{ disabled: !link.enabled }"
-        >
+        <router-link v-for="link in linkStore.links" :to="link.to" class="nav-item"
+          :class="{ disabled: !link.enabled }">
           {{ link.label }}
         </router-link>
       </div>
     </div>
-    <router-view></router-view>
+    <router-view v-slot="{ Component }">
+      <keep-alive>
+        <component :is="Component" />
+      </keep-alive>
+    </router-view>
   </div>
-
 </template>
 
 <script setup lang="ts">

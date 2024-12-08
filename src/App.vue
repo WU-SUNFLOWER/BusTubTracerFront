@@ -8,7 +8,7 @@
         </router-link>
       </div>
     </div>
-    <router-view v-slot="{ Component }">
+    <router-view v-slot="{ Component }" class="content">
       <keep-alive>
         <component :is="Component" />
       </keep-alive>
@@ -24,7 +24,16 @@ const linkStore = useLinkStore();
 </script>
 
 <style scoped>
+.content {
+  margin-top: 52px;
+}
+
 .header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+  background-color: white;
   width: 100%;
   border-bottom: 1px solid rgb(184, 184, 184);
   border-top: 1px solid rgb(184, 184, 184);

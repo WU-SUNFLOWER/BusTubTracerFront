@@ -47,6 +47,7 @@
             </div>
         </div>
     </div>
+    <Sidebar />
 </template>
 
 <script setup lang="ts">
@@ -58,6 +59,7 @@ import {
 import { ElMessage } from 'element-plus';
 import { useLinkStore } from '@/stores/linkStore';
 import { useProcessDataStore } from '@/stores/processDataStore';
+import Sidebar from '@/components/Sidebar.vue';
 
 const linkStore = useLinkStore();
 const processStore = useProcessDataStore();
@@ -246,6 +248,7 @@ const copyToClipboard = async (text: string) => {
     font-size: 16px;
     line-height: 1.8;
     text-align: left;
+    margin-top: 70px;
     margin-left: 6%;
     margin-right: 6%;
     margin-bottom: 40px;

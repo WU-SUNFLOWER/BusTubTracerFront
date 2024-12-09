@@ -204,7 +204,8 @@ const sidebarRef = ref();
 }
 
 .tag {
-    width: 9%;
+    min-width: 9%;
+    white-space: nowrap;
     margin-left: 2%;
     margin-right: 2%;
     height: 14px;

@@ -8,8 +8,8 @@
         </router-link>
       </div>
     </div>
-    <router-view v-slot="{ Component }" class="content">
-      <keep-alive>
+    <router-view v-slot="{ Component }">
+      <keep-alive :include="componentsToCache.join(',')">
         <component :is="Component" />
       </keep-alive>
     </router-view>
@@ -21,20 +21,15 @@ import { useLinkStore } from '@/stores/linkStore';
 
 const linkStore = useLinkStore();
 
+const componentsToCache = ['Home']
+
 </script>
 
 <style scoped>
-.content {
-  margin-top: 52px;
-}
-
 .header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 2000;
   background-color: white;
   width: 100%;
+  height: 50px;
   border-bottom: 1px solid rgb(184, 184, 184);
   border-top: 1px solid rgb(184, 184, 184);
 }

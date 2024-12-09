@@ -17,7 +17,7 @@
             <div class="middle_planner" v-if="selectedBtnIndex == 1">
                 <PlannerTree :plannerTree="optimized_planner_tree" @getNowNode="updateNowNode" />
             </div>
-            <div class="middle_executor" v-if="selectedBtnIndex == 2">
+            <div class="middle_planner" v-if="selectedBtnIndex == 2">
                 <ExecutorTree :executorTree="optimized_planner_tree" @getNowNode="updateNowNode" />
             </div>
         </div>
@@ -91,7 +91,7 @@ function selectButton(index: number) {
 }
 
 const searchCommand = getCurSearchCommand();
-
+console.log(searchCommand);
 
 const planner_tree = (processInfo as any)?.planner_tree;
 const optimized_planner_tree = (processInfo as any)?.optimized_planner_tree;
@@ -223,12 +223,6 @@ const expressionText = ref('');
     overflow: auto;
 }
 
-.middle_executor {
-    width: 100%;
-    height: 88%;
-    border-top: #ccc 1px solid;
-}
-
 .btn-tree {
     width: 85%;
     margin: 10px auto;
@@ -277,21 +271,27 @@ const expressionText = ref('');
     width: 50%;
     border-right: 1px solid #ccc;
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .middle_planner {
     width: 100%;
-    height: 88%;
-    border-top: #ccc 1px solid;
+    flex-grow: 1;
+    border-top: #ccc 1px solid;    
+    overflow: hidden;
 }
 
 .middle-header {
     width: 100%;
+    align-self: flex-start;
     overflow-y: auto;
     text-align: center;
     font-size: 16px;
     font-weight: bold;
     padding: 5px;
+    min-height: 20px;
+    overflow: hidden;
 }
 
 .tip-box {

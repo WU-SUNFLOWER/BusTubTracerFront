@@ -1,53 +1,62 @@
 <template>
-    <div class="container">
-        <div class="description">
-            <h2>🌟Welcome to BusTubTracer!</h2>
-            <p>You can submit your SQL command here.</p>
-            <h2>🌰Some Examples:</h2>
-            <ul>
-                <li>Query all teachers' names.</li>
-                <p class="text-copy" @click="copyToSearchInput('select name from teacher;')">select name from teacher;
-                </p>
-                <li>Query all courses with more than 2 credits.</li>
-                <p class="text-copy" @click="copyToSearchInput('select * from course where credit > 2;')">select * from
-                    course where
-                    credit > 2;</p>
-                <li>Query the names of the teachers and the courses they teach.</li>
-                <p class="text-copy"
-                    @click="copyToSearchInput('select course.name,teacher.name from course, teacher, course_teacher where course.id =  course_teacher.cid and teacher.id = course_teacher.tid;')">
-                    select course.name,
-                    teacher.name from course, teacher, course_teacher where
-                    course.id =
-                    course_teacher.cid and teacher.id = course_teacher.tid;</p>
-            </ul>
-        </div>
+    <div class="search-remain" :style="{width: `calc(100% - ${sidebarWidth}px)`}">
         <div class="search-box">
-            <el-input style="height: 50px;" v-model="searchInput" @input="handleInputChange" @keyup.enter="handleSearch"
-                placeholder="Enter your SQL command here" clearable spellcheck="false">
+            <el-input 
+                style="height: 50px;font-size: 16px;" 
+                v-model="searchInput" 
+                @input="handleInputChange" 
+                @keyup.enter="handleSearch"
+                placeholder="Enter your SQL command here" 
+                clearable 
+                spellcheck="false"
+            >
                 <template #append>
                     <el-button style="height: 50px;" class="custom-primary-button"
                         @click="handleSearch">Submit</el-button>
                 </template>
             </el-input>
         </div>
-    </div>
-    <div class="search-remain">
-        <div v-for="(item, index) in interleavedItems" :key="index">
-            <div v-if="index % 2 == 0" class="search-remain1">
-                <div class="tag">🚀 Your SQL</div>
-                <div class="sql-result-area2"> {{ item }} </div>
-                <div class="copy" @click="copyToClipboard(item)">copy</div>
+        <el-scrollbar>
+            <div class="description">
+                <h2>🌟Welcome to BusTubTracer!</h2>
+                <p>You can submit your SQL command here.</p>
+                <h2>🌰Some Examples:</h2>
+                <ul>
+                    <li>Query all teachers' names.</li>
+                    <p class="text-copy" @click="copyToSearchInput('select name from teacher;')">select name from teacher;
+                    </p>
+                    <li>Query all courses with more than 2 credits.</li>
+                    <p class="text-copy" @click="copyToSearchInput('select * from course where credit > 2;')">select * from
+                        course where
+                        credit > 2;</p>
+                    <li>Query the names of the teachers and the courses they teach.</li>
+                    <p class="text-copy"
+                        @click="copyToSearchInput('select course.name,teacher.name from course, teacher, course_teacher where course.id =  course_teacher.cid and teacher.id = course_teacher.tid;')">
+                        select course.name,
+                        teacher.name from course, teacher, course_teacher where
+                        course.id =
+                        course_teacher.cid and teacher.id = course_teacher.tid;</p>
+                </ul>
             </div>
-            <div v-if="index % 2 == 1" class="search-remain2">
-                <div class="tag">💡 BusTub Reply</div>
-                <div class="sql-result">
-                    <div class="sql-result-area"> {{ item }} </div>
+            <div v-for="(item, index) in interleavedItems" :key="index">
+                <div v-if="index % 2 == 0" class="search-remain1">
+                    <div class="tag">🚀 Your SQL</div>
+                    <div class="sql-result-area2"> {{ item }} </div>
+                    <el-icon class="copy" @click="copyToClipboard(item)"><CopyDocument /></el-icon>
                 </div>
-                <div class="copy" @click="copyToClipboard(item)">copy</div>
+                <div v-if="index % 2 == 1" class="search-remain2">
+                    <div class="tag">💡 BusTub Reply</div>
+                    <div class="sql-result">
+                        <div class="sql-result-area"> {{ item }} </div>
+                    </div>
+                    <el-icon class="copy" @click="copyToClipboard(item)"><CopyDocument /></el-icon>
+                </div>
             </div>
-        </div>
+            <div class="search-remain-padding"></div>
+        </el-scrollbar>
     </div>
-    <Sidebar />
+    <Sidebar ref="sidebarRef" @updateSidebarWidth="updateSidebarWidth"/>
+    
 </template>
 
 <script setup lang="ts">
@@ -59,7 +68,14 @@ import {
 import { ElMessage } from 'element-plus';
 import { useLinkStore } from '@/stores/linkStore';
 import { useProcessDataStore } from '@/stores/processDataStore';
+import {CopyDocument} from '@element-plus/icons-vue'
 import Sidebar from '@/components/Sidebar.vue';
+
+const sidebarWidth = ref(0);
+
+const updateSidebarWidth = (value: number) => {
+    sidebarWidth.value = value;
+};
 
 const linkStore = useLinkStore();
 const processStore = useProcessDataStore();
@@ -88,18 +104,20 @@ onMounted(() => {
 });
 
 const handleSearch = async () => {
-    if (searchInput.value === '') {
+    const inputSQL = searchInput.value;
+    if (inputSQL === '') {
         ElMessage({
             message: 'Search input cannot be empty',
             type: 'warning',
         });
         return;
     }
-    searchRemain1.value.push(searchInput.value)
+    searchRemain1.value.push(inputSQL);
     const result = await window.bustub.sendMessage("/submit_sql_command", {
-        'sql': searchInput.value
+        'sql': inputSQL
     });
-    saveSearchToLocalStorage(searchInput.value, result);
+    setCurSearchCommand(inputSQL);
+    saveSearchToLocalStorage(inputSQL, result);
     if (result['err_msg']) {
         ElMessage({
             message: result['err_msg'],
@@ -117,6 +135,11 @@ const handleSearch = async () => {
         can_show_process: canShowProcess,
         process_info: processInfo,
     } = result['data'];
+
+    if (sidebarRef.value && !inputSQL.startsWith("select ")) {
+        sidebarRef.value.reloadAllData();
+    }
+    
     rawSqlResult.value = rawResult;
     searchRemain2.value.push(rawSqlResult.value);
     if (canShowProcess) {
@@ -168,6 +191,9 @@ const copyToClipboard = async (text: string) => {
         });
     }
 }
+
+const sidebarRef = ref();
+
 </script>
 
 <style scoped>
@@ -190,30 +216,28 @@ const copyToClipboard = async (text: string) => {
 }
 
 .search-remain1 {
-    width: 90%;
+    width: calc(100% - 40px);
     display: flex;
     background-color: rgb(239, 239, 239);
     padding: 20px;
-    padding-right: 11%;
 }
 
 .search-remain2 {
-    width: 90%;
+    width: calc(100% - 40px);
     display: flex;
     padding: 20px;
-    padding-right: 11%;
 }
 
 .search-remain {
-    width: 100%;
+    height: calc(100vh - 52px);
     overflow: hidden;
     text-align: left;
-    margin-bottom: 120px;
+    position: relative;
 }
 
 .search-box {
-    position: fixed;
-    bottom: -5%;
+    position: absolute;
+    bottom: 0%;
     left: 9%;
     width: 82.5%;
     box-sizing: border-box;
@@ -226,6 +250,7 @@ const copyToClipboard = async (text: string) => {
     border: 1px solid #ccc;
     box-shadow: 0px 2px 5px rgba(0, 0, 0, .3);
     cursor: pointer;
+    font-family: monospace;
 }
 
 .custom-primary-button {
@@ -248,10 +273,11 @@ const copyToClipboard = async (text: string) => {
     font-size: 16px;
     line-height: 1.8;
     text-align: left;
-    margin-top: 70px;
-    margin-left: 6%;
-    margin-right: 6%;
+    margin-top: 40px;
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 40px;
+    width: 65%;
 }
 
 .description ul {
@@ -266,14 +292,14 @@ const copyToClipboard = async (text: string) => {
 }
 
 .sql-result {
-    width: 80%;
+    width: calc(100% - 20%);
 }
 
 .sql-result .sql-result-area {
     white-space: pre;
     font-family: monospace;
-    /* text-align: center; */
-
+    text-align: center;
+    font-size: 16px;    
 }
 
 .sql-result-area2 {
@@ -282,5 +308,10 @@ const copyToClipboard = async (text: string) => {
     font-family: monospace;
     word-wrap: break-word;
     white-space: normal;
+    font-size: 16px;
+}
+
+.search-remain-padding {
+    height: 200px;
 }
 </style>

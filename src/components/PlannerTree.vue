@@ -1,5 +1,5 @@
 <template>
-    <div class="container">
+    <div id="svg-container">
         <svg id="mainsvg"></svg>
     </div>
 
@@ -115,7 +115,8 @@ function getNodeStyle(id: number) {
 
 function drawTree() {
     // 清除之前的渲染
-    d3.select('#mainsvg').selectAll('*').remove();
+    const wrappedSvg = d3.select('#mainsvg');
+    wrappedSvg.selectAll('*').remove();
     graph = new dagreD3.graphlib.Graph();
     graph.setGraph({ rankdir: 'BT' });
 
@@ -138,18 +139,19 @@ function drawTree() {
     });
 
     const render = new dagreD3.render();
-    container = d3.select('#mainsvg').append('g');
+    container = wrappedSvg.append('g');
     render(container, graph);
+
+    const containerElem: HTMLElement = document.querySelector("#svg-container") as HTMLElement;
+    const graphWidth = graph.graph().width;
+    const containerWidth = containerElem!.offsetWidth;
+    wrappedSvg.call(zoomController.transform as any, d3.zoomIdentity.translate((containerWidth - graphWidth) / 2, 40));
+
 
     container.selectAll('g.node').each(function (this: SVGGElement, index: any) {
         const nodeId = data.nodes[index].id;
         d3.select(this).attr("data-node-id", nodeId);
     });
-
-    const gBBox = container.node().getBBox();
-    d3.select('#mainsvg').attr('viewBox', `0 0 ${gBBox.width} ${gBBox.height}`);
-    d3.select('#mainsvg').attr('width', gBBox.width);
-    d3.select('#mainsvg').attr('height', gBBox.height);
 
     container.selectAll('g.node').on('click', (e: any) => {
         let elem = e.currentTarget;
@@ -193,7 +195,7 @@ onUnmounted(() => {
     height: 100% !important;
 }
 
-.container {
+#svg-container {
     width: 100%;
     height: 100% !important;
     display: flex;

@@ -2,9 +2,8 @@
     <div 
         class="sidebar" 
         :style="{ width: sidebarWidth + 'px' }" 
-        @mousedown="startDragging"
     >
-        <div class="resizer" @mousedown.prevent="startResizing">
+        <div class="resizer" @mousedown="startDragging">
             <svg
                 width="5" 
                 height="26" 

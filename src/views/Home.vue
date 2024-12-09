@@ -47,7 +47,11 @@
                 <div v-if="index % 2 == 1" class="search-remain2">
                     <div class="tag">💡 BusTub Reply</div>
                     <div class="sql-result">
-                        <div class="sql-result-area"> {{ item }} </div>
+                        <div 
+                            :class="`sql-result-area ${item.is_successed ? '' : 'error_msg'}`"
+                        > 
+                            {{ item.text }} 
+                        </div>
                     </div>
                     <el-icon class="copy" @click="copyToClipboard(item)"><CopyDocument /></el-icon>
                 </div>
@@ -123,7 +127,10 @@ const handleSearch = async () => {
             message: result['err_msg'],
             type: 'error'
         });
-        searchRemain2.value.push("Error: " + result['err_msg']);
+        searchRemain2.value.push({
+            text: "Error: " + result['err_msg'],
+            is_successed: false,
+        });
         return;
     }
     ElMessage({
@@ -141,7 +148,10 @@ const handleSearch = async () => {
     }
     
     rawSqlResult.value = rawResult;
-    searchRemain2.value.push(rawSqlResult.value);
+    searchRemain2.value.push({
+        text: rawSqlResult.value,
+        is_successed: true,
+    });
     if (canShowProcess) {
         linkStore.enableLink("Process");
         processStore.setData(processInfo);
@@ -301,6 +311,10 @@ const sidebarRef = ref();
     font-family: monospace;
     text-align: center;
     font-size: 16px;    
+}
+
+.error_msg {
+    color: rgb(255, 0, 0);
 }
 
 .sql-result-area2 {

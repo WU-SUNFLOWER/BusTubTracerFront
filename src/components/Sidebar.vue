@@ -31,6 +31,7 @@
                     border 
                     highlight-current-row 
                     @current-change="handleCurrentChange"
+                    ref="tableListRef"
                 >
                     <el-table-column prop="table_oid" label="Table ID"></el-table-column>
                     <el-table-column prop="table_name" label="Table Name"></el-table-column>
@@ -67,6 +68,7 @@ let startX: number | null = null;
 let initialWidth: number | null = null;
 let isResizing = false;
 
+const tableListRef = ref();
 const loadingTableContent = ref(false);
 
 const emit = defineEmits(['updateSidebarWidth']);
@@ -124,13 +126,22 @@ const reloadAllData = async () => {
     let allTableInfo = result.data;
     tablesInfo.value = loadAllTables(allTableInfo);
     if (hasSelectedRow.value === true && currentRow.value.table_name) {
+        for (let table of tablesInfo.value) {
+            if (
+                table.table_name === currentRow.value.table_name 
+                && table.table_oid === currentRow.value.table_oid
+            ) {
+                tableListRef.value.setCurrentRow(table);
+                break;
+            }
+        }
         await updateTableContentViewer();
     }
 };
 
 onMounted(async () => {
     emit('updateSidebarWidth', sidebarWidth.value);
-    reloadAllData();
+    await reloadAllData();
 });
 
 onUnmounted(() => {

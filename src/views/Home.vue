@@ -2,7 +2,7 @@
     <div class="search-remain" :style="{width: `calc(100% - ${sidebarWidth}px)`}">
         <div class="search-box">
             <el-input 
-                style="height: 50px;font-size: 16px;" 
+                class="search-input"
                 v-model="searchInput" 
                 @input="handleInputChange" 
                 @keyup.enter="handleSearch"
@@ -143,18 +143,20 @@ const handleSearch = async () => {
         process_info: processInfo,
     } = result['data'];
 
-    if (sidebarRef.value && !inputSQL.startsWith("select ")) {
-        sidebarRef.value.reloadAllData();
-    }
     
     rawSqlResult.value = rawResult;
     searchRemain2.value.push({
         text: rawSqlResult.value,
         is_successed: true,
     });
+    
     if (canShowProcess) {
         linkStore.enableLink("Process");
         processStore.setData(processInfo);
+    }
+
+    if (sidebarRef.value && !inputSQL.startsWith("select ")) {
+        await sidebarRef.value.reloadAllData();
     }
 };
 
@@ -254,6 +256,12 @@ const sidebarRef = ref();
     box-sizing: border-box;
     padding: 70px;
     z-index: 1000;
+}
+
+.search-input {
+    height: 50px;
+    font-size: 16px;
+    box-shadow: 0 0 #0000, 0 0 #0000, 0 0 15px #0000001a;
 }
 
 .text-copy {

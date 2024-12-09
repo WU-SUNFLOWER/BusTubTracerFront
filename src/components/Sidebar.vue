@@ -131,11 +131,12 @@ const reloadAllData = async () => {
                 table.table_name === currentRow.value.table_name 
                 && table.table_oid === currentRow.value.table_oid
             ) {
+                // This line will call updateTableContentViewer finally.
+                // So we should not call updateTableContentViewer by ourselves!
                 tableListRef.value.setCurrentRow(table);
                 break;
             }
         }
-        await updateTableContentViewer();
     }
 };
 

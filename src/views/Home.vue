@@ -48,7 +48,7 @@
                             {{ item.text }}
                         </div>
                     </div>
-                    <el-icon class="copy" @click="copyToClipboard(item)">
+                    <el-icon class="copy" @click="copyToClipboard(item.text)">
                         <CopyDocument />
                     </el-icon>
                 </div>

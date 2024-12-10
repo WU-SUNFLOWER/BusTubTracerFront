@@ -26,11 +26,12 @@ const createWindow = () => {
     const mainWindow = new BrowserWindow({
         width: 1280,
         height: 720,
-        //resizable: false,
         webPreferences: {
             preload: path.join(__dirname, '../', preloadPath),
         },
     });
+
+    mainWindow.maximize();
 
     if (isDev()) {
         mainWindow.loadURL("http://localhost:5173/");

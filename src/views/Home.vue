@@ -1,32 +1,27 @@
 <template>
-    <div class="search-remain" :style="{width: `calc(100% - ${sidebarWidth}px)`}">
+    <div class="search-remain" :style="{ width: `calc(100% - ${sidebarWidth}px)` }">
         <div class="search-box">
-            <el-input 
-                class="search-input"
-                v-model="searchInput" 
-                @input="handleInputChange" 
-                @keyup.enter="handleSearch"
-                placeholder="Enter your SQL command here" 
-                clearable 
-                spellcheck="false"
-            >
+            <el-input class="search-input" v-model="searchInput" @input="handleInputChange" @keyup.enter="handleSearch"
+                placeholder="Enter your SQL command here" clearable spellcheck="false">
                 <template #append>
                     <el-button style="height: 50px;" class="custom-primary-button"
                         @click="handleSearch">Submit</el-button>
                 </template>
             </el-input>
         </div>
-        <el-scrollbar>
-            <div class="description">
+        <el-scrollbar ref="scrollbarRef">
+            <div class="description" ref="descriptionRef">
                 <h2>🌟Welcome to BusTubTracer!</h2>
                 <p>You can submit your SQL command here.</p>
                 <h2>🌰Some Examples:</h2>
                 <ul>
                     <li>Query all teachers' names.</li>
-                    <p class="text-copy" @click="copyToSearchInput('select name from teacher;')">select name from teacher;
+                    <p class="text-copy" @click="copyToSearchInput('select name from teacher;')">select name from
+                        teacher;
                     </p>
                     <li>Query all courses with more than 2 credits.</li>
-                    <p class="text-copy" @click="copyToSearchInput('select * from course where credit > 2;')">select * from
+                    <p class="text-copy" @click="copyToSearchInput('select * from course where credit > 2;')">select *
+                        from
                         course where
                         credit > 2;</p>
                     <li>Query the names of the teachers and the courses they teach.</li>
@@ -42,25 +37,28 @@
                 <div v-if="index % 2 == 0" class="search-remain1">
                     <div class="tag">🚀 Your SQL</div>
                     <div class="sql-result-area2"> {{ item }} </div>
-                    <el-icon class="copy" @click="copyToClipboard(item)"><CopyDocument /></el-icon>
+                    <el-icon class="copy" @click="copyToClipboard(item)">
+                        <CopyDocument />
+                    </el-icon>
                 </div>
                 <div v-if="index % 2 == 1" class="search-remain2">
                     <div class="tag">💡 BusTub Reply</div>
                     <div class="sql-result">
-                        <div 
-                            :class="`sql-result-area ${item.is_successed ? '' : 'error_msg'}`"
-                        > 
-                            {{ item.text }} 
+                        <div :class="`sql-result-area ${item.is_successed ? '' : 'error_msg'}`">
+                            {{ item.text }}
                         </div>
                     </div>
-                    <el-icon class="copy" @click="copyToClipboard(item)"><CopyDocument /></el-icon>
+                    <el-icon class="copy" @click="copyToClipboard(item)">
+                        <CopyDocument />
+                    </el-icon>
                 </div>
             </div>
             <div class="search-remain-padding"></div>
+            <el-button type="danger" class="clear-screen-button" @click="clearScreen">Clear Screen</el-button>
         </el-scrollbar>
     </div>
-    <Sidebar ref="sidebarRef" @updateSidebarWidth="updateSidebarWidth"/>
-    
+    <Sidebar ref="sidebarRef" @updateSidebarWidth="updateSidebarWidth" />
+
 </template>
 
 <script setup lang="ts">
@@ -72,10 +70,11 @@ import {
 import { ElMessage } from 'element-plus';
 import { useLinkStore } from '@/stores/linkStore';
 import { useProcessDataStore } from '@/stores/processDataStore';
-import {CopyDocument} from '@element-plus/icons-vue'
+import { CopyDocument } from '@element-plus/icons-vue'
 import Sidebar from '@/components/Sidebar.vue';
 
 const sidebarWidth = ref(0);
+const scrollbarRef = ref<HTMLElement | null>(null);
 
 const updateSidebarWidth = (value: number) => {
     sidebarWidth.value = value;
@@ -106,6 +105,14 @@ const interleavedItems = computed(() => {
 onMounted(() => {
     searchInput.value = getCurSearchCommand();
 });
+
+const scrollToBottom = () => {
+    if (scrollbarRef.value) {
+        const container = scrollbarRef.value.$el.querySelector('.el-scrollbar__wrap');
+        container.style.scrollBehavior = 'smooth';
+        container.scrollTop = container.scrollHeight;
+    }
+};
 
 const handleSearch = async () => {
     const inputSQL = searchInput.value;
@@ -143,13 +150,13 @@ const handleSearch = async () => {
         process_info: processInfo,
     } = result['data'];
 
-    
+
     rawSqlResult.value = rawResult;
     searchRemain2.value.push({
         text: rawSqlResult.value,
         is_successed: true,
     });
-    
+
     if (canShowProcess) {
         linkStore.enableLink("Process");
         processStore.setData(processInfo);
@@ -158,6 +165,7 @@ const handleSearch = async () => {
     if (sidebarRef.value && !inputSQL.startsWith("select ")) {
         await sidebarRef.value.reloadAllData();
     }
+    scrollToBottom();
 };
 
 const handleInputChange = () => {
@@ -204,11 +212,30 @@ const copyToClipboard = async (text: string) => {
     }
 }
 
+const descriptionRef = ref<HTMLElement | null>(null);
+const clearScreen = () => {
+    if (descriptionRef.value) {
+        descriptionRef.value.innerHTML = '';
+    }
+    searchRemain1.value = [];
+    searchRemain2.value = [];
+    ElMessage({
+        message: 'Screen cleared',
+        type: 'success',
+    });
+};
 const sidebarRef = ref();
 
 </script>
 
 <style scoped>
+.clear-screen-button {
+    position: fixed;
+    bottom: 80px;
+    left: 20px;
+    z-index: 1000;
+}
+
 .copy {
     margin-left: 20px;
     cursor: pointer;
@@ -318,7 +345,7 @@ const sidebarRef = ref();
     white-space: pre;
     font-family: monospace;
     text-align: center;
-    font-size: 16px;    
+    font-size: 16px;
 }
 
 .error_msg {

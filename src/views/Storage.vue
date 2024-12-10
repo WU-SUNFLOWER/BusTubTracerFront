@@ -5,16 +5,28 @@
             <el-input v-model="searchInput" clearable style="width: 99%;margin:0.5%;"
                 placeholder="Search your table quickly" :prefix-icon="Search">
             </el-input>
-            <el-table :data="filteredTables" style="width:99%;margin:0.5%;height:calc(50% - 35px - 40px - 25px);" border
-                highlight-current-row @current-change="handleCurrentChange">
+            <el-table 
+                :data="filteredTables" 
+                style="width:99%;margin:0.5%;height:calc(50% - 35px - 40px - 25px);" 
+                border
+                highlight-current-row 
+                @current-change="handleCurrentChange"
+                v-loading="tableListLoadingRef"
+            >
                 <el-table-column prop="table_oid" label="Table ID"></el-table-column>
                 <el-table-column prop="table_name" label="Table Name"></el-table-column>
             </el-table>
             <div class="header" style="border-top: 1px solid black;">Table Content</div>
             <div class="right-table-container">
                 <h1 v-if="!hasSelectedRow" class="tip-text">Please select a table.</h1>
-                <el-table v-if="hasSelectedRow" :data="currentTable.data" border stripe
-                    style="width:99%;height: 99%;margin:0.5%;">
+                <el-table 
+                    v-if="hasSelectedRow" 
+                    :data="currentTable.data" 
+                    border 
+                    stripe
+                    style="width:99%;height: 99%;margin:0.5%;"
+                    v-loading="tableContentLoadingRef"
+                >
                     <el-table-column v-for="header in currentTable.headers" :key="header" :prop="header"
                         :label="header">
                     </el-table-column>
@@ -152,8 +164,13 @@
 
         <div class="right">
             <div class="header" style="background-color:rgb(190,190,190);">Buffer Pool</div>
-            <el-table :data="bufferPoolInfo" :row-class-name="getTableRowClassName"
-                style="width: 99%;margin: 0.5%;height: calc(100% - 45px);" border>
+            <el-table 
+                v-loading="bufferPoolLoadingRef"
+                :data="bufferPoolInfo" 
+                :row-class-name="getTableRowClassName"
+                style="width: 99%;margin: 0.5%;height: calc(100% - 45px);" 
+                border
+            >
                 <el-table-column prop="frame_id" label="Frame ID"></el-table-column>
                 <el-table-column prop="page_id" label="Page ID"></el-table-column>
                 <el-table-column prop="is_dirty" label="Is Dirty"></el-table-column>
@@ -171,15 +188,24 @@ import { Search, ArrowRight } from '@element-plus/icons-vue';
 
 let bufferPoolInfo: any = ref([]);
 
+const tableListLoadingRef = ref(true);
+const tableContentLoadingRef = ref(false);
+const bufferPoolLoadingRef = ref(true);
+
 onMounted(async () => {
-    let result = await window.bustub.sendMessage("/get_all_tables", {});
-    let allTableInfo = result.data;
-
-    result = await window.bustub.sendMessage("/get_buffer_pool_info", {});
-    bufferPoolInfo.value = result.data.buffer_pool_info;
-
-    tablesInfo.value = loadAllTables(allTableInfo);
-
+    const getTableListPromise = async () => {
+        let result = await window.bustub.sendMessage("/get_all_tables", {});
+        let allTableInfo = result.data;
+        tablesInfo.value = loadAllTables(allTableInfo);
+        tableListLoadingRef.value = false;
+    };
+    const getBufferPoolInfo = async () => {
+        let result = await window.bustub.sendMessage("/get_buffer_pool_info", {});
+        bufferPoolInfo.value = result.data.buffer_pool_info;   
+        bufferPoolLoadingRef.value = false;     
+    }
+    await getTableListPromise();
+    await getBufferPoolInfo();
 });
 
 interface TableInfo {
@@ -224,6 +250,9 @@ const currentTable = ref({
 });
 const handleCurrentChange = async (val: TableInfo) => {
     if (!val) return
+
+    tableContentLoadingRef.value = true;
+
     hasSelectedRow.value = true;
     currentRow.value = val;
 
@@ -242,6 +271,8 @@ const handleCurrentChange = async (val: TableInfo) => {
     else if (hasSelectedTableHeap.value) {
         gotoTableHeap()
     }
+
+    tableContentLoadingRef.value = false;
 };
 
 const getTableRowClassName = ({ row }: { row: any }) => {

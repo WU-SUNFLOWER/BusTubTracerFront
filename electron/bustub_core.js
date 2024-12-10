@@ -57,16 +57,10 @@ const BusTubCore = {
     },
 
     exit() {
-        ;
         this.closeConnection();
-        console.log("The connection to BusTubCore is closed.");
-        
-        if (this.exitProcess()) {
-            console.log("The BusTubCore Process is exited.");
-        } else {
-            console.error("Fail to kill BusTubCore Process.");
-        }
-        
+        console.log("The connection to BusTubCore is closed.");        
+        // When the client-server connection is closed, 
+        // BusTubCore will exit automatically.
     },
 
     initProcess() {

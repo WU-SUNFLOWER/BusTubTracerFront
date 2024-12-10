@@ -108,7 +108,8 @@ onMounted(() => {
 
 const scrollToBottom = () => {
     if (scrollbarRef.value) {
-        const container = scrollbarRef.value.$el.querySelector('.el-scrollbar__wrap');
+        const scrollbarObject: any = scrollbarRef.value;
+        const container = scrollbarObject.$el.querySelector('.el-scrollbar__wrap');
         container.style.scrollBehavior = 'smooth';
         container.scrollTop = container.scrollHeight;
     }
@@ -165,7 +166,11 @@ const handleSearch = async () => {
     if (sidebarRef.value && !inputSQL.startsWith("select ")) {
         await sidebarRef.value.reloadAllData();
     }
-    scrollToBottom();
+
+    // We should wait Vue3 to render new elements to screen.
+    // Then we can get the right `scrollHeight`,
+    // and scroll the scroll bar to the bottom of the view area.
+    requestAnimationFrame(() => scrollToBottom());
 };
 
 const handleInputChange = () => {
@@ -214,8 +219,15 @@ const copyToClipboard = async (text: string) => {
 
 const descriptionRef = ref<HTMLElement | null>(null);
 const clearScreen = () => {
+
+    const tip = 'Are you sure you want to clear the screen?\nYou can still access all the records on the "SQL Logs" page.';
+    if (!window.confirm(tip)) {
+        return;
+    }
+
     if (descriptionRef.value) {
-        descriptionRef.value.innerHTML = '';
+        descriptionRef.value.remove();
+        descriptionRef.value = null;
     }
     searchRemain1.value = [];
     searchRemain2.value = [];

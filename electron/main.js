@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path, { resolve, dirname } from 'path';
 import process from 'process';
 import BusTubCore from './bustub_core.js';
@@ -31,11 +31,38 @@ const createWindow = () => {
             preload: path.join(__dirname, '../', preloadPath),
         },
     });
+
     if (isDev()) {
         mainWindow.loadURL("http://localhost:5173/");
     } else {
         mainWindow.setMenu(null);
         mainWindow.loadFile(path.join(__dirname, '../', htmlPath));
+    }
+
+    // Catch window closing event.
+    mainWindow.on('close', (e) => {
+        e.preventDefault();
+        closeConfirmDialog(e, mainWindow);
+    });
+};
+
+const closeConfirmDialog = (e, window) => {
+    const choice = dialog.showMessageBoxSync(window, {
+      type: 'question',
+      buttons: ['Cancel', 'OK'],
+      defaultId: 0,
+      cancelId: 0,
+      title: 'Are you sure you want to exit the app?',
+      message: 'After exiting, all your operations in BusTub will be cleared!'
+    });
+  
+    if (choice === 1) {
+      // 移除所有监听器，防止再次触发
+      window.removeAllListeners('close');
+      // 销毁窗口
+      window.close();
+    } else {
+      e.preventDefault();
     }
 };
 
@@ -124,6 +151,15 @@ app.whenReady().then(async () => {
     await initTestTables();
     handleIpcRequirement();
     createWindow();
+});
+
+// 在所有窗口关闭时退出应用
+app.on('window-all-closed', () => {
+    // 对于 macOS，不要调用 app.quit()
+    if (process.platform !== 'darwin') {
+        BusTubCore.exit();
+        app.quit();
+    }
 });
 
 // 证书的链接验证失败时，触发该事件

@@ -1,20 +1,46 @@
 <template>
     <div class="container">
-        <el-table :data="tableData" :row-style="{ 'height': '60px', }" :header-cell-style="{
-            'background-color': 'lightgray',
-            'color': 'black',
-            'font-weight': '800',
-            'font-size': '16px',
-            'text-align': 'center',
-            'height': '60px'
-        }" border class="table">
-            <el-table-column prop="time" label="Time" align="center" />
-            <el-table-column prop="command" label="Your SQL Command" align="center" />
-            <el-table-column prop="result" label="Result" align="center" />
-            <el-table-column label="Options" align="center" width="180">
+        <el-table
+            :data="tableData"
+            :style="{
+                'width': '100vw'
+            }" 
+            :row-style="{ 
+                'height': '60px'
+            }" 
+            :header-cell-style="{
+                'background-color': 'lightgray',
+                'color': 'black',
+                'font-weight': '800',
+                'font-size': '16px',
+                'text-align': 'center',
+                'height': '60px'
+            }" 
+            border 
+            class="table"
+        >
+            <el-table-column prop="time" label="Time" align="center" width="150" :resizable="false"/>
+            <el-table-column prop="command" label="Your SQL Command" align="center" :resizable="false" />
+            <el-table-column prop="result" label="Result" align="center" width="150" :resizable="false" />
+            <el-table-column label="Options" align="center" width="250" :resizable="false">
                 <template v-slot="scope">
                     <div style="display: flex; justify-content: center;">
-                        <el-button type="primary" @click="check(scope.$index, scope.row)">Check</el-button>
+                        <el-tooltip 
+                            :content="
+                                scope.row.result === 'Failed' ? 
+                                    'You can\'t check failed record.'
+                                 :  'This record is not supported for checking.'
+                            " 
+                            placement="bottom"
+                            v-if="!scope.row.canShowProcess"
+                        >
+                            <el-button type="primary" disabled>Check Process</el-button>
+                        </el-tooltip>
+                        <el-button 
+                            type="primary" 
+                            @click="check(scope.$index, scope.row)"
+                            v-else
+                        >Check Process</el-button>
                         <el-button type="danger" @click="deleteRow(scope.$index)">Delete</el-button>
                     </div>
                 </template>
@@ -52,32 +78,27 @@ const loadData = () => {
             time: item.time,
             command: item.sql,
             result: outputResult,
+            rawResult: rawResult,
+            canShowProcess: rawResult?.data?.process_info !== void 0,
         };
     });
-    console.log(tableData.value);
 };
 
 const processStore = useProcessDataStore();
 const linkStore = useLinkStore();
 const check = async (index: number, row: any) => {
-    const result = await window.bustub.sendMessage("/submit_sql_command", {
-        'sql': row.command
-    });
-    console.log(result);
-    setCurSearchCommand(row.command)
-    const {
-        raw_result: rawResult,
-        can_show_process: canShowProcess,
-        process_info: processInfo,
-    } = result['data'];
-    if (canShowProcess) {
-        linkStore.enableLink("Process");
-        processStore.setData(processInfo);
-        ElMessage({
-            message: 'Check the process page to see the result.',
-            type: 'success',
-        });
+    const rawResult = row?.rawResult;
+    const processInfo = rawResult?.data?.process_info;
+    if (!processInfo) {
+        console.error("can't find raw result");
+        return;
     }
+    linkStore.enableLink("Process");
+    processStore.setData(processInfo);
+    ElMessage({
+        message: 'Please goto "Process" page to check the process of this SQL command.',
+        type: 'success',
+    });
 };
 
 const deleteRow = (index: number) => {

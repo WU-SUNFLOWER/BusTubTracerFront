@@ -1,20 +1,9 @@
 <template>
-    <div 
-        class="sidebar" 
-        :style="{ width: sidebarWidth + 'px' }" 
-    >
+    <div class="sidebar" :style="{ width: sidebarWidth + 'px' }">
         <div class="resizer" @mousedown="startDragging">
-            <svg
-                width="5" 
-                height="26" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg" 
-                class="resizer-icon"
-            >
-                <path 
-                    fill="#BFC3CD" 
-                    d="M0 0h2v2H0zM0 3h2v2H0zM0 6h2v2H0zM0 9h2v2H0zM0 12h2v2H0zM0 15h2v2H0zM0 18h2v2H0zM0 21h2v2H0zM0 24h2v2H0zM3 0h2v2H3zM3 3h2v2H3zM3 6h2v2H3zM3 9h2v2H3zM3 12h2v2H3zM3 15h2v2H3zM3 18h2v2H3zM3 21h2v2H3zM3 24h2v2H3z"
-                >
+            <svg width="5" height="26" fill="none" xmlns="http://www.w3.org/2000/svg" class="resizer-icon">
+                <path fill="#BFC3CD"
+                    d="M0 0h2v2H0zM0 3h2v2H0zM0 6h2v2H0zM0 9h2v2H0zM0 12h2v2H0zM0 15h2v2H0zM0 18h2v2H0zM0 21h2v2H0zM0 24h2v2H0zM3 0h2v2H3zM3 3h2v2H3zM3 6h2v2H3zM3 9h2v2H3zM3 12h2v2H3zM3 15h2v2H3zM3 18h2v2H3zM3 21h2v2H3zM3 24h2v2H3z">
 
                 </path>
             </svg>
@@ -25,31 +14,21 @@
                 <el-input v-model="searchInput" clearable style="width: 99%;margin:0.5%;"
                     placeholder="Search your table quickly" :prefix-icon="Search">
                 </el-input>
-                <el-table 
-                    :data="filteredTables" 
-                    style="width:99%;margin:0.5%;height:calc(50% - 35px - 40px - 25px);"
-                    border 
-                    highlight-current-row 
-                    @current-change="handleCurrentChange"
-                    ref="tableListRef"
-                >
-                    <el-table-column prop="table_oid" label="Table ID"></el-table-column>
-                    <el-table-column prop="table_name" label="Table Name"></el-table-column>
-                </el-table>
+                <el-scrollbar style="width:99%;margin:0.5%;height:calc(50% - 35px - 40px - 25px);">
+                    <el-table-v2 :data="filteredTables" :columns="columns1" :width="500" :height="300" border
+                        highlight-current-row @click="handleRowClick" ref="tableListRef">
+                    </el-table-v2>
+                </el-scrollbar>
+
                 <div class="header" style="border-top: 1px solid black;">Table Content</div>
                 <div class="right-table-container">
                     <h1 v-if="!hasSelectedRow" class="tip-text">Please select a table.</h1>
-                    <el-table 
-                        v-if="hasSelectedRow"
-                        v-loading="loadingTableContent" 
-                        :data="currentTable.data" 
-                        border 
-                        stripe
-                        style="width:99%;height: 99%;margin:0.5%;">
-                        <el-table-column v-for="header in currentTable.headers" :key="header" :prop="header"
-                            :label="header">
-                        </el-table-column>
-                    </el-table>
+                    <el-scrollbar style="width:99%;margin:0.5%;height:calc(50% - 35px - 40px - 25px);">
+                        <el-table-v2 :width="500" :height="300" v-if="hasSelectedRow" v-loading="loadingTableContent"
+                            border stripe style="width:99%;height: 99%;margin:0.5%;" :columns="currentTableColumns"
+                            :data="currentTable.data">
+                        </el-table-v2>
+                    </el-scrollbar>
                 </div>
 
             </div>
@@ -61,6 +40,7 @@
 import { ref, onMounted, onUnmounted, computed, watch, defineExpose } from 'vue';
 import { Search } from '@element-plus/icons-vue';
 import { queryResultToElTableData } from '@/utils/bustub';
+import type { Column, } from 'element-plus';
 
 const sidebarWidth = ref(350); // 初始宽度
 let isDragging = false;
@@ -128,7 +108,7 @@ const reloadAllData = async () => {
     if (hasSelectedRow.value === true && currentRow.value.table_name) {
         for (let table of tablesInfo.value) {
             if (
-                table.table_name === currentRow.value.table_name 
+                table.table_name === currentRow.value.table_name
                 && table.table_oid === currentRow.value.table_oid
             ) {
                 // This line will call updateTableContentViewer finally.
@@ -156,9 +136,31 @@ defineExpose({ reloadAllData });
 interface TableInfo {
     table_oid: number;
     table_name: string;
+    id: string,
+    parentId: number | null,
 }
 const searchInput = ref('');
 const tablesInfo = ref<TableInfo[]>([]);
+const columns1: Column<any>[] = [{
+    key: 'table_oid',
+    dataKey: 'table_oid',
+    title: 'Table ID',
+    width: 50
+}, {
+    key: 'table_name',
+    dataKey: 'table_name',
+    title: 'Table Name',
+    width: 150
+},]
+
+const currentTableColumns = computed(() => {
+    return currentTable.value.headers.map(header => ({
+        key: header,
+        dataKey: header,
+        title: header,
+        width: 100
+    })) as Column<any>[];
+});
 
 const filteredTables = computed(() => {
     if (!searchInput.value) {
@@ -182,6 +184,8 @@ const loadAllTables = (allTableInfo: any) => {
     return allTableInfo.tables.map((table: any) => ({
         table_name: table.table_name,
         table_oid: table.table_oid,
+        id: table.table_oid,
+        parentId: null,
     }));
 };
 
@@ -203,16 +207,50 @@ const updateTableContentViewer = async () => {
     const res = queryResultToElTableData(result);
     currentTable.value.headers = res.headers;
     currentTable.value.data = res.data;
+    let currentId = 1;
+    currentTable.value.data.forEach((item: any) => {
+        if (!item.id) {
+            item.id = currentId++;
+        }
+        if (!item.parentId) {
+            item.parentId = null;
+        }
+        if (item.rid !== undefined) {
+            delete item.rid;
+        }
+    });
     currentTable.value.table_name = result.data.table_name;
     currentTable.value.table_oid = result.data.table_oid;
     loadingTableContent.value = false;
+    console.log(currentTable.value.data)
+    console.log(currentTable.value.headers.map(header => ({
+        key: header,
+        dataKey: header,
+        title: header,
+        width: 100
+    })) as Column<any>[])
 }
 
-const handleCurrentChange = async (val: TableInfo) => {
-    if (!val) return
-    hasSelectedRow.value = true;
-    currentRow.value = val;
 
+const handleRowClick = async (e: any) => {
+    const target = e.target
+    let row = target.parentNode
+    while (1) {
+        const nowClassArr = row.className?.split(' ') || []
+        if (nowClassArr.indexOf('el-table-v2__row') > -1) break
+        if (nowClassArr.indexOf('el-table-v2__header') > -1 || nowClassArr.indexOf('el-virtual-scrollbar') > -1 || nowClassArr.indexOf('el-table-v2__empty') > -1) {
+            return
+        }
+        const parentNode = row.parentNode
+        if (!parentNode) {
+            return
+        }
+        row = parentNode
+    }
+    hasSelectedRow.value = true;
+    currentRow.value.table_oid = row.getAttribute('rowkey');
+    const foundTable = tablesInfo.value.find(table => table.table_oid == currentRow.value.table_oid);
+    currentRow.value.table_name = (foundTable?.table_name || '');
     await updateTableContentViewer();
 
 };

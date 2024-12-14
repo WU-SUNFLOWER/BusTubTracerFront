@@ -9,21 +9,22 @@ const isDev = () => {
     if (typeof electron === 'string') {
         throw new TypeError('Not running in an Electron environment!');
     }
-    
+
     const { env } = process;
     const isEnvSet = 'ELECTRON_IS_DEV' in env;
     const getFromEnv = Number.parseInt(env.ELECTRON_IS_DEV, 10) === 1;
-    
+
     return isEnvSet ? getFromEnv : !app.isPackaged;
 };
 
+let mainWindow;
 const createWindow = () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
     const htmlPath = "./dist/index.html";
     const preloadPath = "./electron/preload.js"
 
-    const mainWindow = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1280,
         height: 720,
         webPreferences: {
@@ -49,28 +50,61 @@ const createWindow = () => {
 
 const closeConfirmDialog = (e, window) => {
     const choice = dialog.showMessageBoxSync(window, {
-      type: 'question',
-      buttons: ['Cancel', 'OK'],
-      defaultId: 0,
-      cancelId: 0,
-      title: 'Are you sure you want to exit the app?',
-      message: 'After exiting, all your operations in BusTub will be cleared!'
+        type: 'question',
+        buttons: ['Cancel', 'OK'],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Are you sure you want to exit the app?',
+        message: 'After exiting, all your operations in BusTub will be cleared!'
     });
-  
+
     if (choice === 1) {
-      // 移除所有监听器，防止再次触发
-      window.removeAllListeners('close');
-      // 销毁窗口
-      window.close();
+        // 移除所有监听器，防止再次触发
+        window.removeAllListeners('close');
+        // 销毁窗口
+        window.close();
     } else {
-      e.preventDefault();
+        e.preventDefault();
     }
 };
 
+let resultWindow;
 const handleIpcRequirement = () => {
     ipcMain.handle('sendMessage', async (event, api, data) => {
         return await sendMessageToBustub(api, data);
     });
+
+    ipcMain.handle('showResultWindow', async (event, result) => {
+        if (!resultWindow) {
+            resultWindow = new BrowserWindow({
+                width: 600,
+                height: 400,
+                parent: mainWindow,
+                modal: false,
+                show: false
+            });
+
+            resultWindow.loadFile('result.html');
+
+            resultWindow.on('closed', () => {
+                resultWindow = null;
+            });
+
+            resultWindow.webContents.on('did-finish-load', () => {
+                updateResultWindow(result);
+                resultWindow.show();
+            });
+        } else {
+            updateResultWindow(result);
+            resultWindow.focus();
+        }
+    });
+
+};
+const updateResultWindow = (result) => {
+    if (resultWindow && resultWindow.webContents) {
+        resultWindow.webContents.send('result-data', result);
+    }
 };
 
 const sendMessageToBustub = async (api, data = {}) => {
@@ -88,18 +122,18 @@ const initTestTables = async () => {
 
     // Init `department` table
     let departments = [
-        "Computer Science", "Software Engineering", 
+        "Computer Science", "Software Engineering",
         "Information Security", "Teaching and Research Section"
     ];
     let values = [];
     for (let i = 0; i < departments.length; ++i) {
         values.push(`(${i}, '${departments[i]}')`);
     }
-    await BusTubCore.executeSQL(`insert into department values ${values.join(',')}`);        
-    
+    await BusTubCore.executeSQL(`insert into department values ${values.join(',')}`);
+
     // Init `teacher` table
     let teacheres = [
-        ['CZX', 3], ['HT', 0], ['LBL', 1], ['HPY', 3], 
+        ['CZX', 3], ['HT', 0], ['LBL', 1], ['HPY', 3],
         ['FJ', 0], ['SC', 0], ['XB', 1], ['LCX', 0],
         ['BCZ', 0], ['DXY', 0], ['CWG', 0], ['JZY', 0],
         ['SJ', 2], ['HBH', 2], ['ZDH', 2], ['YT', 2],
@@ -132,7 +166,7 @@ const initTestTables = async () => {
     let course_teacher = [
         [0, 7], [1], [2], [3, 14], [4],
         [5, 11], [6], [8], [9], [10],
-        [16, 17, 9], [18]   
+        [16, 17, 9], [18]
     ];
     values = [];
     for (let cid = 0; cid < course_teacher.length; ++cid) {

@@ -15,7 +15,7 @@
                     placeholder="Search your table quickly" :prefix-icon="Search">
                 </el-input>
                 <el-scrollbar style="width:99%;margin:0.5%;height:calc(50% - 35px - 40px - 25px);">
-                    <el-table-v2 :data="filteredTables" :columns="columns1" :width="500" :height="300" border
+                    <el-table-v2 :data="filteredTables" :columns="columns1" :width="600" :height="300" border
                         highlight-current-row @click="handleRowClick" ref="tableListRef">
                     </el-table-v2>
                 </el-scrollbar>
@@ -23,10 +23,10 @@
                 <div class="header" style="border-top: 1px solid black;">Table Content</div>
                 <div class="right-table-container">
                     <h1 v-if="!hasSelectedRow" class="tip-text">Please select a table.</h1>
-                    <el-scrollbar style="width:99%;margin:0.5%;height:calc(50% - 35px - 40px - 25px);">
-                        <el-table-v2 :width="500" :height="300" v-if="hasSelectedRow" v-loading="loadingTableContent"
+                    <el-scrollbar style="margin:0.5%;">
+                        <el-table-v2 :width="600" :height="300" v-if="hasSelectedRow" v-loading="loadingTableContent"
                             border stripe style="width:99%;height: 99%;margin:0.5%;" :columns="currentTableColumns"
-                            :data="currentTable.data">
+                            :data="currentTableData">
                         </el-table-v2>
                     </el-scrollbar>
                 </div>
@@ -62,14 +62,6 @@ const startDragging = (event: MouseEvent) => {
     startX = event.clientX;
     initialWidth = sidebarWidth.value;
     document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-};
-
-const startResizing = (event: MouseEvent) => {
-    isResizing = true;
-    isDragging = false; // 防止同时触发拖拽和调整宽度
-    initialWidth = sidebarWidth.value;
-    document.addEventListener('mousemove', onResizeMouseMove);
     document.addEventListener('mouseup', onMouseUp);
 };
 
@@ -136,7 +128,7 @@ defineExpose({ reloadAllData });
 interface TableInfo {
     table_oid: number;
     table_name: string;
-    id: string,
+    id: number,
     parentId: number | null,
 }
 const searchInput = ref('');
@@ -160,6 +152,9 @@ const currentTableColumns = computed(() => {
         title: header,
         width: 100
     })) as Column<any>[];
+});
+const currentTableData = computed(() => {
+    return currentTable.value.data;
 });
 
 const filteredTables = computed(() => {
@@ -222,13 +217,6 @@ const updateTableContentViewer = async () => {
     currentTable.value.table_name = result.data.table_name;
     currentTable.value.table_oid = result.data.table_oid;
     loadingTableContent.value = false;
-    console.log(currentTable.value.data)
-    console.log(currentTable.value.headers.map(header => ({
-        key: header,
-        dataKey: header,
-        title: header,
-        width: 100
-    })) as Column<any>[])
 }
 
 

@@ -48,9 +48,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { h, ref } from 'vue';
 import { getSearchHistory, getSearchResult, setSearchHistory, setSearchResult, setCurSearchCommand } from '@/utils/localStorage';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useProcessDataStore } from '@/stores/processDataStore';
 import { useLinkStore } from '@/stores/linkStore';
 import { useRouter } from 'vue-router';
@@ -98,8 +98,24 @@ const checkProcess = async (index: number, row: any) => {
 
 const checkResult = async (index: number, row: any) => {
     const rawResult = row?.rawResult;
-    const sqlResult = rawResult?.data?.raw_result || 'No result';
-    await window.bustub.showResultWindow(sqlResult)
+    const result = rawResult?.data?.raw_result || 'No result'
+    const scrollableDiv = h('div', {
+        style: {
+            height: '300px',
+            width: '400px',
+            overflow: 'auto',
+            whiteSpace: 'pre',
+            fontFamily: 'monospace',
+            textAlign: 'center',
+            fontSize: '16px'
+        }
+    }, [result]);
+
+    ElMessageBox({
+        title: 'SQL Result',
+        message: scrollableDiv,
+        showClose: false
+    });
 };
 const deleteRow = (index: number) => {
     tableData.value.splice(index, 1);

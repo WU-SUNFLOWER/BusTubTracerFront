@@ -67,45 +67,14 @@ const closeConfirmDialog = (e, window) => {
         e.preventDefault();
     }
 };
-
-let resultWindow;
 const handleIpcRequirement = () => {
     ipcMain.handle('sendMessage', async (event, api, data) => {
         return await sendMessageToBustub(api, data);
     });
 
-    ipcMain.handle('showResultWindow', async (event, result) => {
-        if (!resultWindow) {
-            resultWindow = new BrowserWindow({
-                width: 600,
-                height: 400,
-                parent: mainWindow,
-                modal: false,
-                show: false
-            });
-
-            resultWindow.loadFile('result.html');
-
-            resultWindow.on('closed', () => {
-                resultWindow = null;
-            });
-
-            resultWindow.webContents.on('did-finish-load', () => {
-                updateResultWindow(result);
-                resultWindow.show();
-            });
-        } else {
-            updateResultWindow(result);
-            resultWindow.focus();
-        }
-    });
 
 };
-const updateResultWindow = (result) => {
-    if (resultWindow && resultWindow.webContents) {
-        resultWindow.webContents.send('result-data', result);
-    }
-};
+
 
 const sendMessageToBustub = async (api, data = {}) => {
     let request = JSON.stringify({ api, data });

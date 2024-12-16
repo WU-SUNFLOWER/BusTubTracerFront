@@ -1,47 +1,43 @@
 <template>
     <div class="container">
-        <el-table
-            :data="tableData"
-            :style="{
-                'width': '100vw'
-            }" 
-            :row-style="{ 
-                'height': '60px'
-            }" 
-            :header-cell-style="{
-                'background-color': 'lightgray',
-                'color': 'black',
-                'font-weight': '800',
-                'font-size': '16px',
-                'text-align': 'center',
-                'height': '60px'
-            }" 
-            border 
-            class="table"
-        >
-            <el-table-column prop="time" label="Time" align="center" width="150" :resizable="false"/>
+        <el-table :data="tableData" :style="{
+            'width': '100vw'
+        }" :row-style="{
+            'height': '60px'
+        }" :header-cell-style="{
+            'background-color': 'lightgray',
+            'color': 'black',
+            'font-weight': '800',
+            'font-size': '16px',
+            'text-align': 'center',
+            'height': '60px'
+        }" border class="table">
+            <el-table-column prop="time" label="Time" align="center" width="150" :resizable="false" />
             <el-table-column prop="command" label="Your SQL Command" align="center" :resizable="false" />
             <el-table-column prop="result" label="Result" align="center" width="150" :resizable="false" />
             <el-table-column label="Options" align="center" width="250" :resizable="false">
                 <template v-slot="scope">
                     <div style="display: flex; justify-content: center;">
-                        <el-tooltip 
-                            :content="
-                                scope.row.result === 'Failed' ? 
-                                    'You can\'t check failed record.'
-                                 :  'This record is not supported for checking.'
-                            " 
-                            placement="bottom"
-                            v-if="!scope.row.canShowProcess"
-                        >
-                            <el-button type="primary" disabled>Check Process</el-button>
+                        <el-tooltip :content="scope.row.result === 'Failed' ?
+                            'You can\'t check failed record.'
+                            : 'This record is not supported for checking.'
+                            " placement="bottom" v-if="!scope.row.canShowProcess">
+                            <el-button type="primary" disabled style="font-size: 12px;width: 30%;">Process</el-button>
                         </el-tooltip>
-                        <el-button 
-                            type="primary" 
-                            @click="check(scope.$index, scope.row)"
-                            v-else
-                        >Check Process</el-button>
-                        <el-button type="danger" @click="deleteRow(scope.$index)">Delete</el-button>
+                        <el-button type="primary" style="font-size: 12px;width: 30%;"
+                            @click="checkProcess(scope.$index, scope.row)" v-else>
+                            Process</el-button>
+                        <el-tooltip :content="scope.row.result === 'Failed' ?
+                            'You can\'t check failed record.'
+                            : 'This record is not supported for checking.'
+                            " placement="bottom" v-if="!scope.row.canShowProcess">
+                            <el-button type="primary" disabled style="font-size: 12px;width: 30%;">Result</el-button>
+                        </el-tooltip>
+                        <el-button type="primary" style="font-size: 12px;width: 30%;"
+                            @click="checkResult(scope.$index, scope.row)" v-else>
+                            Result</el-button>
+                        <el-button type="danger" style="font-size: 12px;width: 30%;"
+                            @click="deleteRow(scope.$index)">Delete</el-button>
                     </div>
                 </template>
             </el-table-column>
@@ -52,16 +48,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { h, ref } from 'vue';
 import { getSearchHistory, getSearchResult, setSearchHistory, setSearchResult, setCurSearchCommand } from '@/utils/localStorage';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useProcessDataStore } from '@/stores/processDataStore';
 import { useLinkStore } from '@/stores/linkStore';
+import { useRouter } from 'vue-router';
 
 const tableData = ref();
 const searchHistory = ref([]);
 const searchResults = ref([]);
-
+const router = useRouter();
 const loadData = () => {
     searchHistory.value = getSearchHistory();
     searchResults.value = getSearchResult();
@@ -86,7 +83,7 @@ const loadData = () => {
 
 const processStore = useProcessDataStore();
 const linkStore = useLinkStore();
-const check = async (index: number, row: any) => {
+const checkProcess = async (index: number, row: any) => {
     const rawResult = row?.rawResult;
     const processInfo = rawResult?.data?.process_info;
     if (!processInfo) {
@@ -95,12 +92,31 @@ const check = async (index: number, row: any) => {
     }
     linkStore.enableLink("Process");
     processStore.setData(processInfo);
-    ElMessage({
-        message: 'Please goto "Process" page to check the process of this SQL command.',
-        type: 'success',
-    });
+
+    router.push({ path: '/process' });
 };
 
+const checkResult = async (index: number, row: any) => {
+    const rawResult = row?.rawResult;
+    const result = rawResult?.data?.raw_result || 'No result'
+    const scrollableDiv = h('div', {
+        style: {
+            height: '300px',
+            width: '400px',
+            overflow: 'auto',
+            whiteSpace: 'pre',
+            fontFamily: 'monospace',
+            textAlign: 'center',
+            fontSize: '16px'
+        }
+    }, [result]);
+
+    ElMessageBox({
+        title: 'SQL Result',
+        message: scrollableDiv,
+        showClose: false
+    });
+};
 const deleteRow = (index: number) => {
     tableData.value.splice(index, 1);
     searchHistory.value.splice(index, 1);

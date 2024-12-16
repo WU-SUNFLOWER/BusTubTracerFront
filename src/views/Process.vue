@@ -91,7 +91,6 @@ function selectButton(index: number) {
 }
 
 const searchCommand = getCurSearchCommand();
-console.log(searchCommand);
 
 const planner_tree = (processInfo as any)?.planner_tree;
 const optimized_planner_tree = (processInfo as any)?.optimized_planner_tree;
@@ -278,7 +277,7 @@ const expressionText = ref('');
 .middle_planner {
     width: 100%;
     flex-grow: 1;
-    border-top: #ccc 1px solid;    
+    border-top: #ccc 1px solid;
     overflow: hidden;
 }
 

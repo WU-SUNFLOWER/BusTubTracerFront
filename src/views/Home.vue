@@ -128,8 +128,6 @@ const handleSearch = async () => {
     const result = await window.bustub.sendMessage("/submit_sql_command", {
         'sql': inputSQL
     });
-    setCurSearchCommand(inputSQL);
-    saveSearchToLocalStorage(inputSQL, result);
     if (result['err_msg']) {
         ElMessage({
             message: result['err_msg'],
@@ -160,12 +158,17 @@ const handleSearch = async () => {
 
     if (canShowProcess) {
         linkStore.enableLink("Process");
+        processInfo['sql_command'] = inputSQL;
         processStore.setData(processInfo);
     }
 
     if (sidebarRef.value && !inputSQL.startsWith("select ")) {
         await sidebarRef.value.reloadAllData();
     }
+
+    // Update local storage.
+    setCurSearchCommand(inputSQL);
+    saveSearchToLocalStorage(inputSQL, result);
 
     // We should wait Vue3 to render new elements to screen.
     // Then we can get the right `scrollHeight`,

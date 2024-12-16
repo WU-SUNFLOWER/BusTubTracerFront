@@ -10,7 +10,7 @@
             </button>
         </div>
         <div class="middle">
-            <div class="middle-header">{{ searchCommand }}</div>
+            <div class="middle-header">{{ (processInfo as any).sql_command }}</div>
             <div class="middle_planner" v-if="selectedBtnIndex == 0">
                 <PlannerTree :plannerTree="planner_tree" @getNowNode="updateNowNode" />
             </div>

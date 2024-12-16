@@ -8,7 +8,7 @@ export const useLinkStore = defineStore('links', {
             { to: '/storage',   label: 'Storage',   enabled: true },
             { to: '/index',     label: 'Index',     enabled: true },
             { to: '/sqllogs',   label: 'SQL Logs',  enabled: true },
-            { to: '/help',      label: 'Help',      enabled: true },
+            //{ to: '/help',      label: 'Help',      enabled: true },
         ],
     }),
     actions: {

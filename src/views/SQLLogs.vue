@@ -15,28 +15,28 @@
             <el-table-column prop="time" label="Time" align="center" width="150" :resizable="false" />
             <el-table-column prop="command" label="Your SQL Command" align="center" :resizable="false" />
             <el-table-column prop="result" label="Result" align="center" width="150" :resizable="false" />
-            <el-table-column label="Options" align="center" width="250" :resizable="false">
+            <el-table-column label="Options" align="center" width="350" :resizable="false">
                 <template v-slot="scope">
                     <div style="display: flex; justify-content: center;">
                         <el-tooltip :content="scope.row.result === 'Failed' ?
                             'You can\'t check failed record.'
                             : 'This record is not supported for checking.'
                             " placement="bottom" v-if="!scope.row.canShowProcess">
-                            <el-button type="primary" disabled style="font-size: 12px;width: 30%;">Process</el-button>
+                            <el-button type="primary" disabled style="font-size: 12px;width: 45%;">Check Process</el-button>
                         </el-tooltip>
-                        <el-button type="primary" style="font-size: 12px;width: 30%;"
+                        <el-button type="primary" style="font-size: 12px;width: 45%;"
                             @click="checkProcess(scope.$index, scope.row)" v-else>
-                            Process</el-button>
+                            Check Process</el-button>
                         <el-tooltip :content="scope.row.result === 'Failed' ?
                             'You can\'t check failed record.'
                             : 'This record is not supported for checking.'
                             " placement="bottom" v-if="!scope.row.canShowProcess">
-                            <el-button type="primary" disabled style="font-size: 12px;width: 30%;">Result</el-button>
+                            <el-button type="primary" disabled style="font-size: 12px;width: 45%;">Check Result</el-button>
                         </el-tooltip>
-                        <el-button type="primary" style="font-size: 12px;width: 30%;"
+                        <el-button type="primary" style="font-size: 12px;width: 45%;"
                             @click="checkResult(scope.$index, scope.row)" v-else>
-                            Result</el-button>
-                        <el-button type="danger" style="font-size: 12px;width: 30%;"
+                            Check Result</el-button>
+                        <el-button type="danger" style="font-size: 12px;width: 45%;"
                             @click="deleteRow(scope.$index)">Delete</el-button>
                     </div>
                 </template>
@@ -91,6 +91,7 @@ const checkProcess = async (index: number, row: any) => {
         return;
     }
     linkStore.enableLink("Process");
+    console.log(processInfo);
     processStore.setData(processInfo);
 
     router.push({ path: '/process' });
@@ -98,11 +99,12 @@ const checkProcess = async (index: number, row: any) => {
 
 const checkResult = async (index: number, row: any) => {
     const rawResult = row?.rawResult;
-    const result = rawResult?.data?.raw_result || 'No result'
+    const result = rawResult?.data?.raw_result || 'No result';
+    
     const scrollableDiv = h('div', {
         style: {
-            height: '300px',
-            width: '400px',
+            width: '750px',
+            maxHeight: '800px',
             overflow: 'auto',
             whiteSpace: 'pre',
             fontFamily: 'monospace',
@@ -114,7 +116,11 @@ const checkResult = async (index: number, row: any) => {
     ElMessageBox({
         title: 'SQL Result',
         message: scrollableDiv,
-        showClose: false
+        showClose: false,
+        customStyle: {
+            'max-width': '800px',
+            'max-height': '900px',
+        }
     });
 };
 const deleteRow = (index: number) => {
@@ -166,5 +172,15 @@ loadData();
     bottom: 70px;
     left: 20px;
     z-index: 1000;
+}
+</style>
+
+<style>
+.sql-result-message-box {
+    overflow: auto;
+    white-space: pre;
+    font-family: monospace;
+    text-align: center;
+    font-size: 16px;
 }
 </style>

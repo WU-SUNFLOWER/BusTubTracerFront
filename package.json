@@ -2,7 +2,7 @@
   "name": "BusTubTracer",
   "description": "BusTubTracer, which help you to explore how BusTub work.",
   "author": "BusTubTracer Project Team <2583727181@qq.com>",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "main": "electron/main.js",
